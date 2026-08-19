@@ -52,5 +52,19 @@ Aplicação em <http://localhost:3000>.
 
 ## Roadmap
 
-O plano de evolução até nível corporativo está em
-[`docs/roadmap-nivel-corporativo.md`](docs/roadmap-nivel-corporativo.md).
+O plano de evolução até nível corporativo — dez pilares, seis fases, critério de pronto
+e métricas-alvo — está em
+[**docs/Auditoria-Roadmap-Nivel-Corporativo.pdf**](docs/Auditoria-Roadmap-Nivel-Corporativo.pdf).
+A fonte do documento é [`docs/roadmap-nivel-corporativo.html`](docs/roadmap-nivel-corporativo.html);
+para regerar o PDF após editá-la:
+
+```bash
+chromium --headless --no-pdf-header-footer \
+  --print-to-pdf=docs/Auditoria-Roadmap-Nivel-Corporativo.pdf \
+  docs/roadmap-nivel-corporativo.html
+```
+
+### Próximo passo
+
+**Fase 1 — fundação de dados e segurança:** projeto Supabase, migrations versionadas,
+autenticação e Row Level Security por papel.

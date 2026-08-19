@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Auditoria — Roadmap para Nível Corporativo</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm; }
+  @page :first { margin: 0; }
+
+  :root {
+    --tinta: #1b1f2a;
+    --suave: #5b6478;
+    --linha: #dfe3ec;
+    --fundo-suave: #f6f7fb;
+    --primaria: #4338ca;
+    --primaria-clara: #eef0ff;
+    --verde: #0f766e;
+    --verde-claro: #e6f4f1;
+    --ambar: #b45309;
+    --ambar-claro: #fdf3e3;
+    --vermelho: #be123c;
+    --vermelho-claro: #fdeef2;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: "DejaVu Sans", "Liberation Sans", Arial, sans-serif;
+    font-size: 9.6pt;
+    line-height: 1.55;
+    color: var(--tinta);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ---------- Capa ---------- */
+  .capa {
+    height: 297mm;
+    padding: 34mm 22mm;
+    background: linear-gradient(160deg, #312e81 0%, #4338ca 52%, #6366f1 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    page-break-after: always;
+  }
+  .capa .selo {
+    display: inline-block;
+    align-self: flex-start;
+    border: 1px solid rgba(255,255,255,.45);
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 8pt;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+  .capa h1 {
+    margin: 26mm 0 0;
+    font-size: 30pt;
+    line-height: 1.12;
+    font-weight: 700;
+    letter-spacing: -.02em;
+  }
+  .capa .sub {
+    margin-top: 8mm;
+    font-size: 12pt;
+    max-width: 118mm;
+    color: rgba(255,255,255,.9);
+    line-height: 1.5;
+  }
+  .capa .rodape {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-top: 1px solid rgba(255,255,255,.28);
+    padding-top: 6mm;
+    font-size: 8.5pt;
+    color: rgba(255,255,255,.85);
+  }
+  .capa .rodape strong { display: block; color: #fff; font-size: 10pt; margin-bottom: 2px; }
+
+  /* ---------- Tipografia ---------- */
+  h2 {
+    font-size: 15pt;
+    letter-spacing: -.015em;
+    margin: 0 0 3mm;
+    padding-bottom: 2.5mm;
+    border-bottom: 2px solid var(--primaria);
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 11pt;
+    margin: 7mm 0 2mm;
+    page-break-after: avoid;
+  }
+  h4 { font-size: 9.6pt; margin: 4mm 0 1.5mm; page-break-after: avoid; }
+  p { margin: 0 0 2.5mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 5mm; }
+  li { margin-bottom: 1.2mm; }
+  strong { font-weight: 700; }
+  code {
+    font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;
+    font-size: 8.4pt;
+    background: var(--fundo-suave);
+    border: 1px solid var(--linha);
+    border-radius: 3px;
+    padding: 0 3px;
+  }
+  .secao { page-break-before: always; }
+
+  /* ---------- Componentes ---------- */
+  .chamada {
+    background: var(--fundo-suave);
+    border-left: 3px solid var(--primaria);
+    border-radius: 0 6px 6px 0;
+    padding: 4mm 5mm;
+    margin: 0 0 5mm;
+  }
+  .chamada p:last-child { margin-bottom: 0; }
+
+  table { width: 100%; border-collapse: collapse; margin: 0 0 5mm; font-size: 8.8pt; }
+  thead { display: table-header-group; }
+  th {
+    text-align: left;
+    background: var(--fundo-suave);
+    border-bottom: 1.5px solid var(--linha);
+    padding: 2.5mm 3mm;
+    font-size: 7.6pt;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--suave);
+    font-weight: 700;
+  }
+  td { padding: 2.5mm 3mm; border-bottom: 1px solid var(--linha); vertical-align: top; }
+  tr { page-break-inside: avoid; }
+
+  .tag {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-size: 7.4pt;
+    font-weight: 700;
+    letter-spacing: .03em;
+    white-space: nowrap;
+  }
+  .t-critico { background: var(--vermelho-claro); color: var(--vermelho); }
+  .t-alto    { background: var(--ambar-claro);    color: var(--ambar); }
+  .t-medio   { background: var(--primaria-clara); color: var(--primaria); }
+  .t-ok      { background: var(--verde-claro);    color: var(--verde); }
+
+  .pilar {
+    border: 1px solid var(--linha);
+    border-radius: 7px;
+    padding: 4.5mm 5mm;
+    margin-bottom: 4.5mm;
+    page-break-inside: avoid;
+  }
+  .pilar-topo {
+    display: flex;
+    align-items: baseline;
+    gap: 3mm;
+    margin-bottom: 2.5mm;
+    padding-bottom: 2mm;
+    border-bottom: 1px solid var(--linha);
+  }
+  .pilar-num {
+    font-size: 8pt;
+    font-weight: 700;
+    color: var(--primaria);
+    background: var(--primaria-clara);
+    border-radius: 5px;
+    padding: 1.5px 7px;
+    letter-spacing: .05em;
+  }
+  .pilar-topo h3 { margin: 0; flex: 1; font-size: 11pt; }
+  .pilar .porque {
+    font-size: 8.6pt;
+    color: var(--suave);
+    font-style: italic;
+    margin-bottom: 2.5mm;
+  }
+  .pilar ul { margin-bottom: 0; }
+  .pilar li { font-size: 8.9pt; }
+
+  .grade-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+
+  .fase {
+    border: 1px solid var(--linha);
+    border-radius: 7px;
+    overflow: hidden;
+    margin-bottom: 4mm;
+    page-break-inside: avoid;
+  }
+  .fase-topo {
+    background: var(--fundo-suave);
+    border-bottom: 1px solid var(--linha);
+    padding: 2.5mm 4mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 3mm;
+  }
+  .fase-topo h4 { margin: 0; font-size: 9.8pt; }
+  .fase-corpo { padding: 3mm 4mm; }
+  .fase-corpo ul { margin-bottom: 0; }
+  .fase-corpo li { font-size: 8.8pt; }
+  .entregavel {
+    margin-top: 2.5mm;
+    padding-top: 2.5mm;
+    border-top: 1px dashed var(--linha);
+    font-size: 8.4pt;
+    color: var(--suave);
+  }
+  .entregavel strong { color: var(--tinta); }
+
+  .check { list-style: none; padding-left: 0; }
+  .check li {
+    position: relative;
+    padding-left: 6mm;
+    font-size: 8.9pt;
+    margin-bottom: 1.6mm;
+  }
+  .check li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 1.1mm;
+    width: 3.4mm;
+    height: 3.4mm;
+    border: 1.2px solid var(--suave);
+    border-radius: 2px;
+  }
+
+  .nota-rodape {
+    margin-top: 6mm;
+    padding-top: 3mm;
+    border-top: 1px solid var(--linha);
+    font-size: 8pt;
+    color: var(--suave);
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ CAPA ============ -->
+<section class="capa">
+  <span class="selo">Documento de arquitetura e produto</span>
+  <h1>Auditoria<br>Roadmap para nível corporativo</h1>
+  <p class="sub">
+    Os temas que separam um projeto de portfólio de um sistema que uma empresa
+    grande reconheceria como produção — organizados por pilar, prioridade e fase
+    de entrega.
+  </p>
+  <div class="rodape">
+    <div>
+      <strong>Sistema de Gestão de Auditorias Internas</strong>
+      ISO 9001:2015 · Next.js · TypeScript · Supabase
+    </div>
+    <div>Versão 1.0 · Agosto de 2026</div>
+  </div>
+</section>
+
+<!-- ============ 1. COMO SE AVALIA ============ -->
+<section>
+  <h2>1. Como uma empresa grande lê um projeto de portfólio</h2>
+
+  <div class="chamada">
+    <p>
+      Um avaliador técnico gasta entre cinco e dez minutos no seu repositório. Nesse
+      tempo ele não lê o código todo — ele procura <strong>sinais</strong>. A tese
+      deste documento é simples: os sinais que importam são poucos, são previsíveis
+      e quase nenhum deles é "mais telas".
+    </p>
+  </div>
+
+  <p>São seis perguntas que o avaliador responde, quase sempre nesta ordem:</p>
+
+  <table>
+    <thead>
+      <tr><th style="width:34%">A pergunta</th><th style="width:33%">Onde ele procura</th><th>O que reprova</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Isso roda?</td>
+        <td>README, link do deploy, conta de demonstração</td>
+        <td>Precisar clonar e configurar variáveis para ver qualquer coisa</td>
+      </tr>
+      <tr>
+        <td>Tem domínio de verdade?</td>
+        <td>Nomes de tabelas, tipos, regras de cálculo</td>
+        <td>CRUD genérico com nomes tipo <code>items</code> e <code>status</code></td>
+      </tr>
+      <tr>
+        <td>É seguro?</td>
+        <td>Autorização no banco, tratamento de sessão, validação de entrada</td>
+        <td>Filtro de permissão feito só no front-end</td>
+      </tr>
+      <tr>
+        <td>Dá para confiar em mudanças?</td>
+        <td>Testes, CI verde, histórico de commits</td>
+        <td>Zero testes ou um único commit "initial commit" com tudo</td>
+      </tr>
+      <tr>
+        <td>Foi pensado ou copiado?</td>
+        <td>Decisões documentadas, trade-offs assumidos</td>
+        <td>Stack de tutorial sem nenhuma justificativa</td>
+      </tr>
+      <tr>
+        <td>Sabe entregar acabamento?</td>
+        <td>Estados de erro e vazio, acessibilidade, responsividade</td>
+        <td>Telas que só funcionam no caminho feliz</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Onde o projeto está hoje</h3>
+  <p>
+    A fundação já cobre boa parte do que é <em>visível</em>: modelo de domínio tipado
+    e fiel à norma, design system com tokens semânticos, tema claro/escuro, app shell
+    responsivo, painel com indicadores e camada de dados isolada. Isso responde às
+    perguntas 2 e 6.
+  </p>
+  <p>
+    O que falta é justamente o que costuma decidir a avaliação: <strong>segurança,
+    confiabilidade e prova de que funciona</strong> — perguntas 1, 3, 4 e 5. Os dez
+    pilares a seguir cobrem essa lacuna.
+  </p>
+</section>
+
+<!-- ============ 2. PILARES ============ -->
+<section class="secao">
+  <h2>2. Os dez pilares</h2>
+  <p>
+    Cada pilar traz o motivo pelo qual ele pesa na avaliação e os itens concretos a
+    implementar. A etiqueta indica a prioridade relativa.
+  </p>
+
+  <div class="pilar">
+    <div class="pilar-topo">
+      <span class="pilar-num">01</span>
+      <h3>Arquitetura e modelagem de dados</h3>
+      <span class="tag t-critico">Crítico</span>
+    </div>
+    <p class="porque">Sinaliza se você projeta sistemas ou apenas encaixa telas.</p>
+    <ul>
+      <li>Schema multi-tenant com <code>organization_id</code> em toda tabela de negócio, não como campo opcional.</li>
+      <li>Migrations versionadas em <code>supabase/migrations</code>, aplicadas por CI — nunca alteração manual no painel.</li>
+      <li>Constraints reais no banco: <em>foreign keys</em>, <code>check</code> de máquina de estados, <em>unique</em> nos códigos (AUD-2026-014).</li>
+      <li>Índices nas colunas de filtro (<code>status</code>, <code>prazo</code>, <code>organization_id</code>) e explicação do porquê.</li>
+      <li>Tipos TypeScript gerados a partir do schema, garantindo que banco e código não divirjam.</li>
+      <li>Separação de camadas preservada: componentes nunca falam com o banco direto, só via <code>lib/queries</code>.</li>
+    </ul>
+  </div>
+
+  <div class="pilar">
+    <div class="pilar-topo">
+      <span class="pilar-num">02</span>
+      <h3>Segurança, autenticação e autorização</h3>
+      <span class="tag t-critico">Crítico</span>
+    </div>
+    <p class="porque">É o item que mais reprova projeto de portfólio — e o que mais impressiona quando bem feito.</p>
+    <ul>
+      <li><strong>Row Level Security</strong> ativa em todas as tabelas, com políticas por papel (admin, auditor líder, auditor, auditado, gestor).</li>
+      <li>Autorização no banco, não no front: mesmo com o token, um auditado não consegue ler auditoria de outra unidade.</li>
+      <li>Validação de entrada com <em>zod</em> no servidor, não apenas no formulário.</li>
+      <li>Trilha de auditoria imutável (<code>activity_log</code>) — quem alterou o quê e quando. Em um sistema de auditoria, isso é requisito do próprio domínio.</li>
+      <li><em>Rate limiting</em> nas rotas de escrita e nas de autenticação.</li>
+      <li>Cabeçalhos de segurança: CSP, <code>X-Frame-Options</code>, HSTS.</li>
+      <li>Segredos apenas em variáveis de ambiente, com <code>.env.example</code> versionado e <code>.env</code> nunca.</li>
+      <li>Upload de evidências com validação de tipo e tamanho, e URLs assinadas com expiração.</li>
+    </ul>
+  </div>
+
+  <div class="pilar">
+    <div class="pilar-topo">
+      <span class="pilar-num">03</span>
+      <h3>Testes automatizados</h3>
+      <span class="tag t-critico">Crítico</span>
+    </div>
+    <p class="porque">Sem testes, o avaliador assume que qualquer mudança quebra o sistema.</p>
+    <ul>
+      <li><strong>Unitários (Vitest):</strong> cálculo do índice de conformidade ponderado, apuração de prazos vencidos, transições válidas de status.</li>
+      <li><strong>Integração:</strong> as políticas de RLS — o teste mais valioso do projeto. Autentica como cada papel e prova que o acesso indevido falha.</li>
+      <li><strong>E2E (Playwright):</strong> o fluxo que define o produto — criar auditoria, responder checklist, gerar NC, definir plano de ação, verificar eficácia.</li>
+      <li>Cobertura publicada com meta declarada (60–70% é honesto e suficiente; 100% não convence ninguém).</li>
+      <li>Testes de acessibilidade automatizados com <em>axe-core</em> nas telas principais.</li>
+    </ul>
+  </div>
+
+  <div class="pilar">
+    <div class="pilar-topo">
+      <span class="pilar-num">04</span>
+      <h3>CI/CD e automação</h3>
+      <span class="tag t-critico">Crítico</span>
+    </div>
+    <p class="porque">Um badge verde no README responde a pergunta "dá para confiar em mudanças?" antes de qualquer leitura de código.</p>
+    <ul>
+      <li>GitHub Actions rodando <em>lint</em>, <em>typecheck</em>, testes e <em>build</em> em cada <em>pull request</em>.</li>
+      <li>Branch protegida: sem CI verde, não faz <em>merge</em>. Mesmo trabalhando sozinho — o hábito é o que se avalia.</li>
+      <li><em>Preview deploy</em> automático por PR na Vercel.</li>
+      <li>Migrations aplicadas pelo pipeline, não à mão.</li>
+      <li>Dependabot ou Renovate para atualização de dependências.</li>
+      <li><em>Conventional commits</em> e CHANGELOG gerado — histórico legível conta como documentação.</li>
+    </ul>
+  </div>
+
+  <div class="pilar">
+    <div class="pilar-topo">
+      <span class="pilar-num">05</span>
+      <h3>Regras de negócio e profundidade de domínio</h3>
+      <span class="tag t-alto">Alto</span>
+    </div>
+    <p class="porque">É o que transforma "mais um CRUD" em "um sistema". Também é o que rende assunto na entrevista.</p>
+    <ul>
+      <li><strong>Motor de score:</strong> índice de conformidade ponderado pelo peso de cada requisito, com NC maior derrubando a seção inteira.</li>
+      <li><strong>Máquina de estados</strong> explícita da não-conformidade, com transições proibidas rejeitadas no banco — não se encerra uma NC sem causa raiz registrada.</li>
+      <li><strong>SLA por severidade:</strong> prazo calculado automaticamente conforme a classificação, com escalonamento ao gestor no vencimento.</li>
+      <li><strong>Verificação de eficácia</strong> como etapa obrigatória (cláusula 10.2), impedindo o encerramento prematuro que a própria norma cobra.</li>
+      <li><strong>Relatório de auditoria em PDF</strong> com cabeçalho da organização, constatações e assinaturas — é o entregável real do processo.</li>
+      <li><strong>Programa anual</strong> com visão de calendário e alerta de processos não auditados no ciclo.</li>
+      <li>Reincidência: detectar NCs repetidas no mesmo requisito — indicador clássico de ação corretiva ineficaz.</li>
+    </ul>
+  </div>
+
+  <div class="pilar">
+    <div class="pilar-topo">
+      <span class="pilar-num">06</span>
+      <h3>Experiência de uso e acessibilidade</h3>
+      <span class="tag t-alto">Alto</span>
+    </div>
+    <p class="porque">Acabamento é a diferença mais visível entre júnior e pleno.</p>
+    <ul>
+      <li>Estados completos em toda tela: carregando (<em>skeleton</em>), vazio, erro e sem permissão.</li>
+      <li>Execução da auditoria pensada para celular — o auditor preenche em campo, de pé, às vezes sem rede.</li>
+      <li>Formulários com validação inline, mensagens específicas e foco no primeiro campo inválido.</li>
+      <li>WCAG 2.1 nível AA: contraste, navegação por teclado, <em>landmarks</em>, rótulos em ícones.</li>
+      <li>Confirmação em ações destrutivas e desfazer onde fizer sentido.</li>
+      <li>Busca global com atalho de teclado e filtros persistidos na URL (link compartilhável).</li>
+      <li>Otimismo de interface: a ação responde na hora e reverte se o servidor recusar.</li>
+    </ul>
+  </div>
+
+  <div class="pilar">
+    <div class="pilar-topo">
+      <span class="pilar-num">07</span>
+      <h3>Observabilidade</h3>
+      <span class="tag t-medio">Médio</span>
+    </div>
+    <p class="porque">Mostra que você pensa no sistema depois do deploy, não só até ele.</p>
+    <ul>
+      <li>Monitoramento de erros com Sentry, incluindo <em>source maps</em> e identificação de release.</li>
+      <li>Logs estruturados em JSON com <em>request id</em> correlacionando cliente e servidor.</li>
+      <li>Rota <code>/api/health</code> verificando aplicação e banco.</li>
+      <li>Core Web Vitals coletados em produção, não apenas medidos no Lighthouse local.</li>
+      <li>Página de erro e <code>not-found</code> próprias, com caminho de volta.</li>
+    </ul>
+  </div>
+
+  <div class="pilar">
+    <div class="pilar-topo">
+      <span class="pilar-num">08</span>
+      <h3>Performance</h3>
+      <span class="tag t-medio">Médio</span>
+    </div>
+    <p class="porque">Número é argumento. "LCP de 1,2 s" vale mais que "otimizei o front".</p>
+    <ul>
+      <li>Server Components como padrão; <code>"use client"</code> apenas onde há interatividade real.</li>
+      <li><em>Streaming</em> com <code>loading.tsx</code> e Suspense nas telas de listagem.</li>
+      <li>Paginação e filtro no servidor — nunca trazer a tabela inteira para o navegador.</li>
+      <li>Orçamento de bundle vigiado no CI, com falha se estourar o limite.</li>
+      <li>Imagens via <code>next/image</code> em AVIF/WebP e fontes com <code>display: swap</code>.</li>
+      <li>Lighthouse acima de 95 em performance, acessibilidade e boas práticas, com o relatório publicado.</li>
+    </ul>
+  </div>
+
+  <div class="pilar">
+    <div class="pilar-topo">
+      <span class="pilar-num">09</span>
+      <h3>Documentação e apresentação</h3>
+      <span class="tag t-alto">Alto</span>
+    </div>
+    <p class="porque">É o pilar de melhor retorno por hora investida — e o mais negligenciado.</p>
+    <ul>
+      <li>README com captura de tela logo no topo, link do deploy e credenciais da conta de demonstração.</li>
+      <li>Diagrama de arquitetura e diagrama do modelo de dados (Mermaid renderiza direto no GitHub).</li>
+      <li><strong>ADRs</strong> curtas em <code>docs/adr/</code>: por que Supabase, por que RLS em vez de checagem na aplicação, por que domínio em português.</li>
+      <li>Seed com dados de demonstração realistas e conta somente-leitura para o avaliador entrar sem cadastro.</li>
+      <li>Vídeo ou GIF de 60 segundos do fluxo principal.</li>
+      <li><code>CONTRIBUTING.md</code> e template de PR — sinaliza que você sabe trabalhar em equipe.</li>
+    </ul>
+  </div>
+
+  <div class="pilar">
+    <div class="pilar-topo">
+      <span class="pilar-num">10</span>
+      <h3>Conformidade e privacidade</h3>
+      <span class="tag t-medio">Médio</span>
+    </div>
+    <p class="porque">Raro em portfólio e altamente valorizado em empresa grande — especialmente num produto de auditoria.</p>
+    <ul>
+      <li>Mapeamento LGPD dos dados pessoais tratados e sua base legal.</li>
+      <li>Política de retenção e exportação dos dados da organização.</li>
+      <li>Anonimização nos dados de demonstração e nos ambientes de teste.</li>
+      <li>Registro de consentimento e trilha de acesso a dados sensíveis.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 3. ROADMAP ============ -->
+<section class="secao">
+  <h2>3. Roadmap por fases</h2>
+  <p>
+    A ordem é deliberada: primeiro o que sustenta tudo (dados e segurança), depois o
+    que dá profundidade (regras de negócio), por fim o que dá brilho (acabamento e
+    apresentação). Cada fase termina com algo demonstrável.
+  </p>
+
+  <div class="fase">
+    <div class="fase-topo">
+      <h4>Fase 1 — Fundação de dados e segurança</h4>
+      <span class="tag t-critico">Crítico</span>
+    </div>
+    <div class="fase-corpo">
+      <ul>
+        <li>Projeto Supabase dedicado, com migrations versionadas no repositório.</li>
+        <li>Schema completo do domínio, com constraints e índices.</li>
+        <li>Autenticação por e-mail e senha, com sessão via middleware.</li>
+        <li>RLS ativa em todas as tabelas, com política por papel.</li>
+        <li>Tipos TypeScript gerados a partir do schema.</li>
+        <li>Reescrita de <code>lib/queries</code> apontando para o Supabase — a UI não muda.</li>
+      </ul>
+      <p class="entregavel"><strong>Entregável:</strong> login funcionando e dois usuários de papéis diferentes enxergando conjuntos distintos de dados, com o isolamento provado no banco.</p>
+    </div>
+  </div>
+
+  <div class="fase">
+    <div class="fase-topo">
+      <h4>Fase 2 — CI e rede de segurança</h4>
+      <span class="tag t-critico">Crítico</span>
+    </div>
+    <div class="fase-corpo">
+      <ul>
+        <li>GitHub Actions com lint, typecheck, testes e build.</li>
+        <li>Vitest configurado e as regras de cálculo cobertas por testes.</li>
+        <li>Testes de RLS autenticando como cada papel.</li>
+        <li>Branch protegida exigindo CI verde.</li>
+        <li>Deploy na Vercel com <em>preview</em> por PR.</li>
+      </ul>
+      <p class="entregavel"><strong>Entregável:</strong> badge de CI verde no README e link público da aplicação.</p>
+    </div>
+  </div>
+
+  <div class="fase">
+    <div class="fase-topo">
+      <h4>Fase 3 — O produto de verdade</h4>
+      <span class="tag t-alto">Alto</span>
+    </div>
+    <div class="fase-corpo">
+      <ul>
+        <li>Construtor de checklist com seções, requisitos e pesos.</li>
+        <li>Tela de execução da auditoria otimizada para celular, com upload de evidências.</li>
+        <li>Motor de score ponderado, recalculado a cada resposta.</li>
+        <li>Abertura automática de NC quando a resposta é não conforme.</li>
+        <li>Máquina de estados da NC e do plano de ação aplicada no banco.</li>
+        <li>SLA por severidade com escalonamento no vencimento.</li>
+      </ul>
+      <p class="entregavel"><strong>Entregável:</strong> ciclo completo percorrível de ponta a ponta, da criação da auditoria ao encerramento da ação corretiva.</p>
+    </div>
+  </div>
+
+  <div class="fase">
+    <div class="fase-topo">
+      <h4>Fase 4 — Entregáveis do processo</h4>
+      <span class="tag t-alto">Alto</span>
+    </div>
+    <div class="fase-corpo">
+      <ul>
+        <li>Relatório de auditoria em PDF com identidade da organização.</li>
+        <li>Exportação de indicadores em Excel e CSV.</li>
+        <li>Notificações por e-mail de prazo próximo e prazo vencido.</li>
+        <li>Programa anual em visão de calendário.</li>
+        <li>Indicador de reincidência por requisito.</li>
+      </ul>
+      <p class="entregavel"><strong>Entregável:</strong> o gestor consegue tirar do sistema o documento que hoje ele faria no Word.</p>
+    </div>
+  </div>
+
+  <div class="fase">
+    <div class="fase-topo">
+      <h4>Fase 5 — Acabamento e robustez</h4>
+      <span class="tag t-medio">Médio</span>
+    </div>
+    <div class="fase-corpo">
+      <ul>
+        <li>Estados de carregando, vazio, erro e sem permissão em todas as telas.</li>
+        <li>Auditoria de acessibilidade e correção até WCAG AA.</li>
+        <li>Testes E2E do fluxo principal com Playwright.</li>
+        <li>Sentry, logs estruturados e rota de health check.</li>
+        <li>Otimização de performance até Lighthouse acima de 95.</li>
+      </ul>
+      <p class="entregavel"><strong>Entregável:</strong> relatório de Lighthouse e de acessibilidade publicados no repositório.</p>
+    </div>
+  </div>
+
+  <div class="fase">
+    <div class="fase-topo">
+      <h4>Fase 6 — Apresentação</h4>
+      <span class="tag t-alto">Alto</span>
+    </div>
+    <div class="fase-corpo">
+      <ul>
+        <li>README reescrito com capturas, diagramas e conta de demonstração.</li>
+        <li>ADRs registrando as decisões e os trade-offs assumidos.</li>
+        <li>Seed de demonstração e usuário somente-leitura.</li>
+        <li>Vídeo curto do fluxo principal.</li>
+        <li>Bullets de currículo derivados das métricas reais do projeto.</li>
+      </ul>
+      <p class="entregavel"><strong>Entregável:</strong> o avaliador entende o projeto em dois minutos sem clonar nada.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. DEFINITION OF DONE ============ -->
+<section class="secao">
+  <h2>4. Critério de pronto</h2>
+  <p>
+    Vale como régua para qualquer entrega do projeto. Uma funcionalidade só está
+    concluída quando todos os itens aplicáveis foram atendidos.
+  </p>
+
+  <div class="grade-2">
+    <div>
+      <h4>Código</h4>
+      <ul class="check">
+        <li>Tipado sem <code>any</code>, sem <em>type assertion</em> desnecessária</li>
+        <li>Lint e typecheck limpos</li>
+        <li>Regra de negócio isolada da camada de UI</li>
+        <li>Sem valor mágico solto — vai para configuração ou constante</li>
+        <li>Nomes no vocabulário do domínio</li>
+      </ul>
+
+      <h4>Segurança</h4>
+      <ul class="check">
+        <li>Política de RLS escrita e testada</li>
+        <li>Entrada validada no servidor</li>
+        <li>Nenhum segredo no bundle do cliente</li>
+        <li>Alteração registrada na trilha de auditoria</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Interface</h4>
+      <ul class="check">
+        <li>Estados de carregando, vazio e erro implementados</li>
+        <li>Funciona a partir de 360 px de largura</li>
+        <li>Navegável apenas pelo teclado</li>
+        <li>Contraste verificado nos dois temas</li>
+        <li>Textos em português consistente com a norma</li>
+      </ul>
+
+      <h4>Entrega</h4>
+      <ul class="check">
+        <li>Coberta por teste automatizado</li>
+        <li>CI verde no pull request</li>
+        <li>Commit no padrão <em>conventional commits</em></li>
+        <li>Documentação atualizada quando muda comportamento</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Métricas-alvo do projeto</h3>
+  <table>
+    <thead>
+      <tr><th style="width:44%">Métrica</th><th style="width:20%">Meta</th><th>Como comprovar</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Cobertura de testes</td><td><span class="tag t-ok">≥ 60%</span></td><td>Relatório publicado pelo CI</td></tr>
+      <tr><td>Lighthouse — performance</td><td><span class="tag t-ok">≥ 95</span></td><td>Relatório versionado em <code>docs/</code></td></tr>
+      <tr><td>Lighthouse — acessibilidade</td><td><span class="tag t-ok">100</span></td><td>Relatório versionado em <code>docs/</code></td></tr>
+      <tr><td>Largest Contentful Paint</td><td><span class="tag t-ok">&lt; 1,5 s</span></td><td>Medição em produção</td></tr>
+      <tr><td>Tabelas com RLS ativa</td><td><span class="tag t-ok">100%</span></td><td>Teste de integração por papel</td></tr>
+      <tr><td>Erros de tipo</td><td><span class="tag t-ok">0</span></td><td><code>tsc --noEmit</code> no CI</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 5. CURRÍCULO ============ -->
+<section class="secao">
+  <h2>5. Como isso vira currículo</h2>
+
+  <div class="chamada">
+    <p>
+      Um projeto só conta no currículo se o recrutador entender o que ele prova. Descreva
+      por <strong>problema resolvido e resultado medido</strong>, nunca por lista de
+      tecnologias. Os bullets abaixo ficam verdadeiros à medida que as fases avançam.
+    </p>
+  </div>
+
+  <h3>Bullets de referência</h3>
+  <ul>
+    <li>
+      Desenvolvi um sistema de gestão de auditorias internas segundo a ISO 9001:2015,
+      cobrindo o ciclo completo do programa anual à verificação de eficácia das ações
+      corretivas, em Next.js, TypeScript e PostgreSQL.
+    </li>
+    <li>
+      Implementei isolamento multi-tenant com Row Level Security no PostgreSQL,
+      aplicando autorização por papel na camada de dados e comprovando o isolamento
+      por testes de integração.
+    </li>
+    <li>
+      Modelei o motor de cálculo do índice de conformidade ponderado por criticidade
+      de requisito, com máquina de estados que impede o encerramento de
+      não-conformidade sem análise de causa registrada.
+    </li>
+    <li>
+      Estabeleci pipeline de CI com lint, verificação de tipos, testes e build
+      obrigatórios por pull request, além de preview deploy automático.
+    </li>
+    <li>
+      Construí design system próprio com tokens semânticos derivados da classificação
+      de constatações da norma, com tema claro e escuro e conformidade WCAG 2.1 AA.
+    </li>
+  </ul>
+
+  <h3>O que responder na entrevista</h3>
+  <table>
+    <thead>
+      <tr><th style="width:42%">Pergunta provável</th><th>O que o projeto permite responder</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Como você garante que um usuário não vê dados de outro?</td>
+        <td>RLS no PostgreSQL: a política vive no banco, então nem uma falha de front nem uma chamada direta à API contornam o isolamento.</td>
+      </tr>
+      <tr>
+        <td>Qual foi a decisão técnica mais difícil?</td>
+        <td>Autorizar no banco em vez de na aplicação — custa mais para escrever e depurar, e em troca elimina uma classe inteira de vazamento.</td>
+      </tr>
+      <tr>
+        <td>Como você lida com regra de negócio complexa?</td>
+        <td>Máquina de estados explícita com transições validadas por constraint, e o cálculo do score isolado em função pura coberta por testes.</td>
+      </tr>
+      <tr>
+        <td>Como garante que não quebrou nada?</td>
+        <td>Testes unitários nas regras, integração nas políticas de acesso, E2E no fluxo principal, todos obrigatórios no CI.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 6. ARMADILHAS ============ -->
+<section class="secao">
+  <h2>6. Armadilhas comuns</h2>
+
+  <table>
+    <thead>
+      <tr><th style="width:38%">Armadilha</th><th>Por que atrapalha e o que fazer</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Empilhar telas em vez de aprofundar</td>
+        <td>Vinte telas rasas valem menos que cinco com regra de negócio real. Prefira profundidade em um fluxo a largura em muitos.</td>
+      </tr>
+      <tr>
+        <td>Deixar autorização só no front-end</td>
+        <td>Esconder o botão não protege o dado. Qualquer chamada direta à API expõe tudo. A política precisa estar no banco.</td>
+      </tr>
+      <tr>
+        <td>Adiar os testes para o final</td>
+        <td>Testes escritos depois viram teatro de cobertura. Escreva junto com a regra que eles protegem.</td>
+      </tr>
+      <tr>
+        <td>Um único commit gigante</td>
+        <td>O histórico é parte do portfólio: mostra como você decompõe problema. Commits pequenos e descritivos, sempre.</td>
+      </tr>
+      <tr>
+        <td>README sem imagem e sem link</td>
+        <td>Se o avaliador precisa clonar para ver algo, ele não vê. Captura de tela no topo e link de demonstração são inegociáveis.</td>
+      </tr>
+      <tr>
+        <td>Trocar de stack no meio do caminho</td>
+        <td>Projeto terminado vale mais que projeto moderno inacabado. Só troque com motivo escrito em uma ADR.</td>
+      </tr>
+      <tr>
+        <td>Dados de demonstração genéricos</td>
+        <td>"Teste 1, Teste 2" destrói a credibilidade do domínio. O seed precisa parecer um sistema em uso real.</td>
+      </tr>
+      <tr>
+        <td>Perseguir 100% de cobertura</td>
+        <td>Consome tempo que renderia mais em funcionalidade ou segurança. Cubra as regras críticas e declare a meta honestamente.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Prioridade se o tempo for curto</h3>
+  <p>
+    Havendo tempo para apenas três frentes, escolha nesta ordem: <strong>Fase 1</strong>
+    (dados e segurança), <strong>Fase 2</strong> (CI e deploy público) e
+    <strong>Fase 6</strong> (apresentação). Juntas, elas respondem cinco das seis
+    perguntas do capítulo 1 — e são exatamente as que um projeto de portfólio comum
+    deixa em branco.
+  </p>
+
+  <p class="nota-rodape">
+    Auditoria — Sistema de Gestão de Auditorias Internas · Documento de roadmap v1.0 ·
+    Agosto de 2026. Este documento evolui junto com o projeto; a versão vigente fica
+    em <code>docs/roadmap-nivel-corporativo.html</code>.
+  </p>
+</section>
+
+</body>
+</html>
