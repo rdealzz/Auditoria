@@ -1,0 +1,161 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ---------------------------------------------------------------------------
+   Design tokens — Auditoria
+   Paleta neutra fria (slate) + primária índigo corporativa.
+   Cores semânticas seguem a classificação ISO 9001 de achados de auditoria.
+--------------------------------------------------------------------------- */
+:root {
+  --radius: 0.625rem;
+
+  --background: oklch(0.995 0.001 265);
+  --foreground: oklch(0.21 0.02 265);
+
+  --surface: oklch(1 0 0);
+  --surface-muted: oklch(0.975 0.003 265);
+  --surface-hover: oklch(0.962 0.005 265);
+
+  --border: oklch(0.913 0.006 265);
+  --border-strong: oklch(0.85 0.01 265);
+  --input: oklch(0.913 0.006 265);
+  --ring: oklch(0.55 0.16 268);
+
+  --muted-foreground: oklch(0.5 0.02 265);
+
+  --primary: oklch(0.5 0.17 268);
+  --primary-hover: oklch(0.45 0.17 268);
+  --primary-foreground: oklch(0.99 0 0);
+  --primary-subtle: oklch(0.955 0.02 268);
+
+  /* Semânticas de auditoria */
+  --conforme: oklch(0.6 0.13 158);
+  --conforme-subtle: oklch(0.96 0.03 158);
+  --nc-menor: oklch(0.72 0.15 78);
+  --nc-menor-subtle: oklch(0.965 0.04 85);
+  --nc-maior: oklch(0.58 0.2 25);
+  --nc-maior-subtle: oklch(0.962 0.03 25);
+  --observacao: oklch(0.62 0.13 235);
+  --observacao-subtle: oklch(0.96 0.03 235);
+  --neutro: oklch(0.6 0.015 265);
+  --neutro-subtle: oklch(0.955 0.004 265);
+
+  --chart-1: oklch(0.5 0.17 268);
+  --chart-2: oklch(0.6 0.13 158);
+  --chart-3: oklch(0.72 0.15 78);
+  --chart-4: oklch(0.58 0.2 25);
+  --chart-5: oklch(0.62 0.13 235);
+}
+
+.dark {
+  --background: oklch(0.17 0.012 265);
+  --foreground: oklch(0.96 0.003 265);
+
+  --surface: oklch(0.213 0.014 265);
+  --surface-muted: oklch(0.245 0.015 265);
+  --surface-hover: oklch(0.27 0.016 265);
+
+  --border: oklch(0.3 0.016 265);
+  --border-strong: oklch(0.38 0.018 265);
+  --input: oklch(0.3 0.016 265);
+  --ring: oklch(0.65 0.15 268);
+
+  --muted-foreground: oklch(0.68 0.015 265);
+
+  --primary: oklch(0.62 0.17 268);
+  --primary-hover: oklch(0.68 0.16 268);
+  --primary-foreground: oklch(0.15 0.02 268);
+  --primary-subtle: oklch(0.28 0.06 268);
+
+  --conforme: oklch(0.7 0.14 158);
+  --conforme-subtle: oklch(0.28 0.05 158);
+  --nc-menor: oklch(0.78 0.15 82);
+  --nc-menor-subtle: oklch(0.3 0.06 82);
+  --nc-maior: oklch(0.68 0.18 25);
+  --nc-maior-subtle: oklch(0.3 0.07 25);
+  --observacao: oklch(0.7 0.13 235);
+  --observacao-subtle: oklch(0.28 0.05 235);
+  --neutro: oklch(0.65 0.015 265);
+  --neutro-subtle: oklch(0.28 0.012 265);
+
+  --chart-1: oklch(0.62 0.17 268);
+  --chart-2: oklch(0.7 0.14 158);
+  --chart-3: oklch(0.78 0.15 82);
+  --chart-4: oklch(0.68 0.18 25);
+  --chart-5: oklch(0.7 0.13 235);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-subtle: var(--primary-subtle);
+
+  --color-conforme: var(--conforme);
+  --color-conforme-subtle: var(--conforme-subtle);
+  --color-nc-menor: var(--nc-menor);
+  --color-nc-menor-subtle: var(--nc-menor-subtle);
+  --color-nc-maior: var(--nc-maior);
+  --color-nc-maior-subtle: var(--nc-maior-subtle);
+  --color-observacao: var(--observacao);
+  --color-observacao-subtle: var(--observacao-subtle);
+  --color-neutro: var(--neutro);
+  --color-neutro-subtle: var(--neutro-subtle);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --font-sans: var(--font-sans-custom);
+  --font-mono: var(--font-mono-custom);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans-custom), ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Foco visível consistente — requisito WCAG 2.4.7 */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--primary-subtle);
+  }
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
