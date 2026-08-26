@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import Navegacao from '@/components/Navegacao';
-import { Anel, Cartao, Etiqueta, Vazio } from '@/components/ui';
-import { GraficoBarras, GraficoLinha, GraficoRosca } from '@/components/Graficos';
-import { NORMAS, SETORES, nomeNorma, setorPorId } from '@/dados/normas';
+import { Anel, Vazio } from '@/components/ui';
+import { GraficoBarras, GraficoLinha } from '@/components/Graficos';
+import { SETORES } from '@/dados/setores';
+import { roteiroDoSetor } from '@/dados/montagem-roteiro';
+import { clausulas, NORMAS } from '@/dados/sgi';
 import type { Auditoria } from '@/lib/tipos';
 import { calcularMetricas, formatarDuracao, listarAuditorias, taxaConformidade } from '@/lib/armazenamento';
 import { useApp } from '../provedores';
@@ -23,11 +25,28 @@ export default function Indicadores() {
 
   const m = useMemo(() => calcularMetricas(auditorias), [auditorias]);
 
+  /* Conformidade e NC por norma, somando todas as auditorias. */
+  const porNorma = useMemo(() => NORMAS.map((n) => {
+    let avaliadas = 0, conformes = 0, ncs = 0;
+    auditorias.forEach((a) => {
+      if (!a.normas.includes(n.id)) return;
+      roteiroDoSetor(a.setor).forEach((b) => b.itens.forEach((item) => {
+        if (!clausulas(item.chavesClausulas).some((c) => c.norma === n.id)) return;
+        const v = a.verificacoes[item.id];
+        if (!v?.resposta || v.resposta === 'nao_aplicavel') return;
+        avaliadas++;
+        if (v.resposta === 'conforme') conformes++;
+        if (v.resposta === 'nao_conforme') ncs++;
+      }));
+    });
+    return { norma: n, avaliadas, ncs, taxa: avaliadas ? Math.round((conformes / avaliadas) * 100) : 0 };
+  }).filter((x) => x.avaliadas > 0), [auditorias]);
+
   const ncPorSetor = useMemo(() =>
     SETORES.map((s) => ({
-      rotulo: s.nome.split(' ')[0],
+      rotulo: s.nome.split(/[ /]/)[0],
       valor: auditorias.filter((a) => a.setor === s.id).reduce((n, a) => n + a.naoConformidades.length, 0)
-    })).filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor).slice(0, 6)
+    })).filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor).slice(0, 7)
   , [auditorias]);
 
   const ncPorAuditor = useMemo(() => {
@@ -38,14 +57,7 @@ export default function Indicadores() {
     });
     return [...mapa.entries()]
       .map(([rotulo, valor]) => ({ rotulo: rotulo.split(' ')[0], valor }))
-      .sort((a, b) => b.valor - a.valor).slice(0, 6);
-  }, [auditorias]);
-
-  const porNorma = useMemo(() => {
-    const cores = ['rgb(var(--acento))', 'rgb(var(--verde))', 'rgb(var(--ambar))', 'rgb(var(--roxo))', 'rgb(var(--vermelho))', 'rgb(var(--texto-3))'];
-    return NORMAS
-      .map((n, i) => ({ rotulo: n.nome, cor: cores[i % cores.length], valor: auditorias.filter((a) => a.norma === n.id).length }))
-      .filter((x) => x.valor > 0);
+      .filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor).slice(0, 7);
   }, [auditorias]);
 
   const evolucao = useMemo(() => {
@@ -64,104 +76,119 @@ export default function Indicadores() {
 
   const conformidadePorSetor = useMemo(() =>
     SETORES.map((s) => {
-      const doSetor = auditorias.filter((a) => a.setor === s.id && Object.keys(a.itens).length);
+      const doSetor = auditorias.filter((a) => a.setor === s.id && Object.keys(a.verificacoes).length);
       if (!doSetor.length) return null;
-      const media = Math.round(doSetor.reduce((n, a) => n + taxaConformidade(a), 0) / doSetor.length);
-      return { setor: s.nome, media, quantidade: doSetor.length };
+      return {
+        setor: s.nome,
+        media: Math.round(doSetor.reduce((n, a) => n + taxaConformidade(a), 0) / doSetor.length),
+        quantidade: doSetor.length
+      };
     }).filter(Boolean).sort((a, b) => b!.media - a!.media) as { setor: string; media: number; quantidade: number }[]
   , [auditorias]);
 
   if (!usuario) return <Navegacao />;
 
+  const cor = (t: number) => (t >= 85 ? 'rgb(var(--verde))' : t >= 60 ? 'rgb(var(--ambar))' : 'rgb(var(--vermelho))');
+  const barra = (t: number) => (t >= 85 ? 'bg-verde' : t >= 60 ? 'bg-ambar' : 'bg-vermelho');
+
   return (
     <>
       <Navegacao />
-      <main className="mx-auto max-w-conteudo px-5 py-9 sm:px-7">
-        <motion.header initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-8">
-          <h1 className="text-[32px] font-semibold tracking-[-.03em] sm:text-[38px]">Indicadores</h1>
-          <p className="mt-1.5 text-[15px] text-texto3">Desempenho consolidado das auditorias realizadas.</p>
+      <main className="mx-auto max-w-[900px] px-6 pb-24 pt-12 sm:px-8">
+        <motion.header initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-12">
+          <h1 className="text-[38px] font-semibold leading-[1.05] tracking-[-.035em] sm:text-[46px]">Indicadores</h1>
+          <p className="mt-2 text-[15px] text-texto3">Desempenho consolidado do Sistema de Gestão Integrado.</p>
         </motion.header>
 
         {auditorias.length === 0 ? (
-          <Vazio titulo="Sem dados ainda" descricao="Os indicadores aparecem assim que a primeira auditoria for registrada." />
+          <Vazio titulo="Sem dados ainda" descricao="Os indicadores aparecem quando a primeira auditoria for registrada." />
         ) : (
-          <div className="space-y-5">
-            <section className="grid gap-5 lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.6fr)]">
-              <Cartao animar className="flex flex-col items-center justify-center gap-4 text-center">
-                <Anel valor={m.taxaConformidade} tamanho={150} espessura={13}
-                      cor={m.taxaConformidade >= 85 ? 'rgb(var(--verde))' : m.taxaConformidade >= 60 ? 'rgb(var(--ambar))' : 'rgb(var(--vermelho))'}>
-                  <div>
-                    <p className="text-[34px] font-semibold tabular-nums leading-none">{m.taxaConformidade}%</p>
-                    <p className="mt-1 text-[11px] uppercase tracking-wide text-texto3">conforme</p>
-                  </div>
-                </Anel>
-                <div className="grid w-full grid-cols-3 gap-2 border-t pt-4">
-                  <Mini rotulo="Auditorias" valor={String(m.total)} />
-                  <Mini rotulo="NC totais" valor={String(m.totalNC)} />
-                  <Mini rotulo="Tempo médio" valor={formatarDuracao(m.tempoMedioMin)} />
+          <div className="space-y-16">
+            <section className="flex flex-wrap items-center gap-x-14 gap-y-8 border-y py-9">
+              <Anel valor={m.taxaConformidade} tamanho={140} espessura={12} cor={cor(m.taxaConformidade)}>
+                <div>
+                  <p className="text-[32px] font-semibold tabular-nums leading-none">{m.taxaConformidade}%</p>
+                  <p className="mt-1 text-[10.5px] uppercase tracking-wide text-texto3">conforme</p>
                 </div>
-              </Cartao>
+              </Anel>
+              <div className="grid flex-1 grid-cols-2 gap-x-10 gap-y-7 sm:grid-cols-4">
+                <Numero valor={String(m.total)} rotulo="auditorias" />
+                <Numero valor={String(m.totalNC)} rotulo="não conformidades" tom={m.totalNC ? 'text-vermelho' : undefined} />
+                <Numero valor={String(m.verificacoesFeitas)} rotulo="verificações" />
+                <Numero valor={formatarDuracao(m.tempoMedioMin)} rotulo="tempo médio" />
+              </div>
+            </section>
 
-              <Cartao animar atraso={0.06}>
-                <div className="mb-5 flex items-baseline justify-between">
-                  <h3 className="text-[16px] font-semibold">Evolução da conformidade</h3>
-                  <Etiqueta tom="neutro">últimos meses</Etiqueta>
+            {porNorma.length > 0 && (
+              <section>
+                <h2 className="mb-5 text-[12px] font-semibold uppercase tracking-[.12em] text-texto3">Conformidade por norma</h2>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {porNorma.map((p) => (
+                    <div key={p.norma.id} className="rounded-xl2 border bg-superficie p-6">
+                      <div className="flex items-center gap-2">
+                        <span className={`h-2 w-2 rounded-full ${
+                          p.norma.id === 'iso9001' ? 'bg-acento' : p.norma.id === 'iso14001' ? 'bg-verde' : 'bg-ambar'}`} />
+                        <p className="text-[14px] font-semibold">{p.norma.nome}</p>
+                      </div>
+                      <p className="mt-4 text-[34px] font-semibold tabular-nums leading-none">{p.taxa}%</p>
+                      <p className="mt-2 text-[12px] tabular-nums text-texto3">
+                        {p.avaliadas} verificações · {p.ncs} NC
+                      </p>
+                      <div className="mt-4 h-1.5 overflow-hidden rounded-pill bg-texto/[.08]">
+                        <motion.div
+                          initial={{ width: 0 }} animate={{ width: `${p.taxa}%` }}
+                          transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
+                          className={`h-full rounded-pill ${barra(p.taxa)}`}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              </section>
+            )}
+
+            {evolucao.length > 1 && (
+              <section>
+                <h2 className="mb-5 text-[12px] font-semibold uppercase tracking-[.12em] text-texto3">Evolução da conformidade</h2>
                 <GraficoLinha dados={evolucao} />
-              </Cartao>
+              </section>
+            )}
+
+            <section className="grid gap-12 sm:grid-cols-2">
+              <div>
+                <h2 className="mb-5 text-[12px] font-semibold uppercase tracking-[.12em] text-texto3">NC por setor</h2>
+                <GraficoBarras dados={ncPorSetor} cor="rgb(var(--vermelho))" altura={180} />
+              </div>
+              <div>
+                <h2 className="mb-5 text-[12px] font-semibold uppercase tracking-[.12em] text-texto3">NC por auditor</h2>
+                <GraficoBarras dados={ncPorAuditor} cor="rgb(var(--acento))" altura={180} />
+              </div>
             </section>
 
-            <section className="grid gap-5 lg:grid-cols-2">
-              <Cartao animar atraso={0.1}>
-                <h3 className="mb-5 text-[16px] font-semibold">Não conformidades por setor</h3>
-                <GraficoBarras dados={ncPorSetor} cor="rgb(var(--vermelho))" />
-              </Cartao>
-              <Cartao animar atraso={0.14}>
-                <h3 className="mb-5 text-[16px] font-semibold">Não conformidades por auditor</h3>
-                <GraficoBarras dados={ncPorAuditor} cor="rgb(var(--acento))" />
-              </Cartao>
-            </section>
-
-            <section className="grid gap-5 lg:grid-cols-2">
-              <Cartao animar atraso={0.18}>
-                <h3 className="mb-5 text-[16px] font-semibold">Auditorias por norma</h3>
-                <GraficoRosca dados={porNorma} tamanho={170} />
-              </Cartao>
-
-              <Cartao animar atraso={0.22}>
-                <h3 className="mb-4 text-[16px] font-semibold">Conformidade média por setor</h3>
-                {conformidadePorSetor.length === 0 ? (
-                  <p className="py-8 text-center text-[13.5px] text-texto3">Sem itens avaliados ainda.</p>
-                ) : (
-                  <ul className="space-y-3">
-                    {conformidadePorSetor.map((s) => (
-                      <li key={s.setor}>
-                        <div className="mb-1 flex items-baseline justify-between text-[13px]">
-                          <span className="truncate text-texto2">{s.setor}</span>
-                          <span className="ml-3 shrink-0 font-semibold tabular-nums">
-                            {s.media}% <span className="font-normal text-texto3">· {s.quantidade}</span>
-                          </span>
-                        </div>
-                        <div className="h-1.5 overflow-hidden rounded-pill bg-texto/[.08]">
-                          <motion.div
-                            initial={{ width: 0 }} animate={{ width: `${s.media}%` }}
-                            transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
-                            className={`h-full rounded-pill ${s.media >= 85 ? 'bg-verde' : s.media >= 60 ? 'bg-ambar' : 'bg-vermelho'}`}
-                          />
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </Cartao>
-            </section>
-
-            <section className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
-              <Painel rotulo="Concluídas" valor={m.concluidas} />
-              <Painel rotulo="Em andamento" valor={m.emAndamento} />
-              <Painel rotulo="Pendentes" valor={m.pendentes} />
-              <Painel rotulo="Itens avaliados" valor={m.itensRespondidos} />
-            </section>
+            {conformidadePorSetor.length > 0 && (
+              <section>
+                <h2 className="mb-5 text-[12px] font-semibold uppercase tracking-[.12em] text-texto3">Conformidade média por setor</h2>
+                <ul className="space-y-4">
+                  {conformidadePorSetor.map((s) => (
+                    <li key={s.setor}>
+                      <div className="mb-1.5 flex items-baseline justify-between text-[13.5px]">
+                        <span className="truncate text-texto2">{s.setor}</span>
+                        <span className="ml-3 shrink-0 font-semibold tabular-nums">
+                          {s.media}% <span className="font-normal text-texto3">· {s.quantidade}</span>
+                        </span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-pill bg-texto/[.08]">
+                        <motion.div
+                          initial={{ width: 0 }} animate={{ width: `${s.media}%` }}
+                          transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
+                          className={`h-full rounded-pill ${barra(s.media)}`}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
         )}
       </main>
@@ -169,20 +196,11 @@ export default function Indicadores() {
   );
 }
 
-function Mini({ rotulo, valor }: { rotulo: string; valor: string }) {
+function Numero({ valor, rotulo, tom = 'text-texto' }: { valor: string; rotulo: string; tom?: string }) {
   return (
-    <div className="text-center">
-      <p className="text-[16px] font-semibold tabular-nums leading-tight">{valor}</p>
-      <p className="text-[11px] text-texto3">{rotulo}</p>
-    </div>
-  );
-}
-
-function Painel({ rotulo, valor }: { rotulo: string; valor: number }) {
-  return (
-    <div className="cartao p-5">
-      <p className="text-[28px] font-semibold tabular-nums leading-none">{valor}</p>
-      <p className="mt-1.5 text-[13px] text-texto2">{rotulo}</p>
+    <div>
+      <p className={`text-[28px] font-semibold tabular-nums leading-none ${tom}`}>{valor}</p>
+      <p className="mt-2 text-[12px] leading-snug text-texto3">{rotulo}</p>
     </div>
   );
 }

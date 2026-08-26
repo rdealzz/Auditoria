@@ -1,60 +1,58 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import Navegacao from '@/components/Navegacao';
-import Ilustracao from '@/components/Ilustracao';
-import { AreaTexto, Botao, Campo, Cartao, Etiqueta, Selecao } from '@/components/ui';
+import { Botao } from '@/components/ui';
 import { IconeSeta, IconeVoltar } from '@/components/Icones';
-import { NORMAS, SETORES, nomeNorma, setorPorId } from '@/dados/normas';
-import { novaAuditoria, salvarAuditoria } from '@/lib/armazenamento';
+import { FAMILIAS, SETORES } from '@/dados/setores';
+import { resumoSetor } from '@/dados/montagem-roteiro';
+import { NORMAS, type NormaId } from '@/dados/sgi';
+import { gravarPreferencias, lerPreferencias, novaAuditoria, salvarAuditoria } from '@/lib/armazenamento';
 import { useApp } from '@/app/provedores';
 
+const CORES: Record<NormaId, { ativo: string; ponto: string }> = {
+  iso9001: { ativo: 'border-acento bg-acento/10 text-acento', ponto: 'bg-acento' },
+  iso14001: { ativo: 'border-verde bg-verde/10 text-verde', ponto: 'bg-verde' },
+  iso45001: { ativo: 'border-ambar bg-ambar/10 text-ambar', ponto: 'bg-ambar' }
+};
+
+/**
+ * Início em dois toques: escolher o setor e confirmar.
+ * Empresa e auditor vêm da última auditoria; escopo, objetivo e critério
+ * são gerados e continuam editáveis depois.
+ */
 export default function NovaAuditoria() {
   const router = useRouter();
-  const { usuario, avisar } = useApp();
+  const { usuario } = useApp();
 
-  const [form, setForm] = useState({
-    norma: 'iso9001',
-    setor: 'producao',
-    processo: '',
-    empresa: '',
-    auditor: usuario?.nome ?? '',
-    auditado: '',
-    data: new Date().toISOString().slice(0, 10),
-    escopo: '',
-    objetivo: '',
-    criterio: ''
-  });
+  const [setor, setSetor] = useState<string | null>(null);
+  const [empresa, setEmpresa] = useState('');
+  const [normas, setNormas] = useState<NormaId[]>(NORMAS.map((n) => n.id));
+  const [iniciando, setIniciando] = useState(false);
 
-  /* O usuário é lido do armazenamento após a hidratação: preenche o auditor quando ele chega. */
   useEffect(() => {
-    if (usuario?.nome) setForm((f) => (f.auditor ? f : { ...f, auditor: usuario.nome }));
-  }, [usuario?.nome]);
+    const p = lerPreferencias();
+    setEmpresa(p.empresa);
+    if (p.normas?.length) setNormas(p.normas);
+  }, []);
 
-  const definir = (campo: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setForm((f) => ({ ...f, [campo]: e.target.value }));
+  const escolhido = useMemo(() => SETORES.find((s) => s.id === setor), [setor]);
+  const resumo = escolhido ? resumoSetor(escolhido) : null;
 
-  const setor = setorPorId(form.setor);
-
-  /** Preenche escopo, objetivo e critério com um texto técnico coerente com a seleção. */
-  function sugerir() {
-    const s = setorPorId(form.setor);
-    const n = nomeNorma(form.norma);
-    setForm((f) => ({
-      ...f,
-      escopo: f.escopo || `Processos do setor de ${s?.nome ?? f.setor}${f.processo ? ` — ${f.processo}` : ''}, incluindo documentação, infraestrutura, equipamentos, competência, execução, registros e tratamento de não conformidades. Abrange todos os turnos em operação na data da auditoria.`,
-      objetivo: f.objetivo || `Verificar a conformidade dos processos do setor de ${s?.nome ?? f.setor} com os requisitos da ${n} e com os procedimentos internos, identificando não conformidades, riscos e oportunidades de melhoria.`,
-      criterio: f.criterio || `${n}; procedimentos, instruções de trabalho e planos de controle aplicáveis ao setor; requisitos legais e de clientes pertinentes.`
-    }));
-    avisar('Escopo, objetivo e critério sugeridos.');
+  function alternarNorma(id: NormaId) {
+    setNormas((atual) => (atual.includes(id) ? atual.filter((n) => n !== id) : [...atual, id]));
   }
 
-  function iniciar(e: React.FormEvent) {
-    e.preventDefault();
-    const a = salvarAuditoria(novaAuditoria({ ...form, status: 'em_andamento' }));
+  function iniciar() {
+    if (!setor || !empresa.trim() || normas.length === 0) return;
+    setIniciando(true);
+    gravarPreferencias({ empresa: empresa.trim(), auditor: usuario?.nome ?? '', normas });
+    const a = salvarAuditoria(
+      novaAuditoria({ setor, normas, empresa: empresa.trim(), auditor: usuario?.nome ?? '' })
+    );
     router.push(`/auditorias/${a.id}`);
   }
 
@@ -63,86 +61,127 @@ export default function NovaAuditoria() {
   return (
     <>
       <Navegacao />
-      <main className="mx-auto max-w-[900px] px-5 py-9 sm:px-7">
-        <Link href="/painel" className="mb-5 inline-flex items-center gap-1.5 text-[13px] text-texto3 hover:text-texto">
+      <main className="mx-auto max-w-[980px] px-6 pb-40 pt-10 sm:px-8">
+        <Link href="/painel" className="mb-8 inline-flex items-center gap-1.5 text-[13px] text-texto3 transition-colors hover:text-texto">
           <IconeVoltar tamanho={15} />Painel
         </Link>
 
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <h1 className="text-[32px] font-semibold tracking-[-.03em] sm:text-[38px]">Nova auditoria</h1>
-          <p className="mt-2 max-w-2xl text-[15px] text-texto2">
-            Preencha a identificação. Em seguida o sistema conduz você pelas dez etapas, explicando o que verificar,
-            o que perguntar e quais evidências coletar em cada uma.
+        <motion.header
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+          className="mb-12"
+        >
+          <h1 className="text-[40px] font-semibold leading-[1.05] tracking-[-.035em] sm:text-[52px]">
+            Qual setor você vai auditar?
+          </h1>
+          <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-texto2">
+            O roteiro técnico do setor é montado automaticamente, com os requisitos das três normas do SGI.
           </p>
-        </motion.div>
+        </motion.header>
 
-        <form onSubmit={iniciar} className="mt-8 space-y-5">
-          <Cartao animar atraso={0.05}>
-            <h2 className="mb-5 text-[17px] font-semibold">Identificação</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Selecao rotulo="Norma" value={form.norma} onChange={definir('norma')}
-                opcoes={NORMAS.map((n) => ({ valor: n.id, texto: `${n.nome}${n.ano !== '—' ? `:${n.ano}` : ''} — ${n.descricao}` }))} />
-              <Selecao rotulo="Setor" value={form.setor} onChange={definir('setor')}
-                opcoes={SETORES.map((s) => ({ valor: s.id, texto: s.nome }))} />
-              <Campo rotulo="Processo" value={form.processo} onChange={definir('processo')}
-                placeholder="Ex.: Injeção plástica — linha 2" />
-              <Campo rotulo="Empresa" value={form.empresa} onChange={definir('empresa')}
-                placeholder="Ex.: Metalúrgica Sul Ltda." required />
-              <Campo rotulo="Auditor" value={form.auditor} onChange={definir('auditor')}
-                placeholder="Quem conduz a auditoria" required />
-              <Campo rotulo="Auditado" value={form.auditado} onChange={definir('auditado')}
-                placeholder="Responsável pelo setor" required />
-              <Campo rotulo="Data" type="date" value={form.data} onChange={definir('data')} required />
-            </div>
-          </Cartao>
-
-          {setor && (
-            <Cartao animar atraso={0.1}>
-              <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-                <Ilustracao cena={setor.ilustracao} cache={`setor-${setor.id}`} legenda={setor.nome} proporcao="4 / 3" />
-                <div>
-                  <Etiqueta tom="acento" className="mb-3">Contexto do setor</Etiqueta>
-                  <h3 className="text-[19px] font-semibold tracking-[-.02em]">{setor.nome}</h3>
-                  <p className="mt-2 text-[14.5px] leading-relaxed text-texto2">{setor.contexto}</p>
-                  <p className="mb-2 mt-5 text-[12px] font-semibold uppercase tracking-wide text-texto3">Pontos de atenção</p>
-                  <ul className="space-y-1.5">
-                    {setor.atencao.map((a) => (
-                      <li key={a} className="flex gap-2 text-[13.5px] text-texto2">
-                        <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-acento/60" />{a}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+        {FAMILIAS.map((familia, fi) => {
+          const doGrupo = SETORES.filter((s) => s.familia === familia.id);
+          if (!doGrupo.length) return null;
+          return (
+            <motion.section
+              key={familia.id}
+              initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.06 + fi * 0.06, ease: [0.32, 0.72, 0, 1] }}
+              className="mb-10"
+            >
+              <h2 className="mb-4 text-[12px] font-semibold uppercase tracking-[.12em] text-texto3">{familia.nome}</h2>
+              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                {doGrupo.map((s) => {
+                  const ativo = setor === s.id;
+                  const r = resumoSetor(s);
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setSetor(s.id)}
+                      className={`group rounded-xl2 border p-5 text-left transition-all duration-300 ease-apple
+                                  active:scale-[.99]
+                                  ${ativo
+                                    ? 'border-acento bg-acento/[.06] shadow-nivel1'
+                                    : 'bg-superficie hover:-translate-y-0.5 hover:shadow-nivel1'}`}
+                    >
+                      <p className={`text-[16px] font-semibold tracking-[-.015em] ${ativo ? 'text-acento' : 'text-texto'}`}>
+                        {s.nome}
+                      </p>
+                      <p className="mt-1.5 line-clamp-2 text-[13px] leading-snug text-texto3">{s.resumo}</p>
+                      <p className="mt-3 text-[11.5px] tabular-nums text-texto3">
+                        {r.itens} verificações · {r.blocos} blocos
+                      </p>
+                    </button>
+                  );
+                })}
               </div>
-            </Cartao>
-          )}
-
-          <Cartao animar atraso={0.15}>
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-[17px] font-semibold">Escopo, objetivo e critério</h2>
-              <Botao type="button" variante="suave" tamanho="p" onClick={sugerir}>Preencher automaticamente</Botao>
-            </div>
-            <div className="space-y-4">
-              <AreaTexto rotulo="Escopo" value={form.escopo} onChange={definir('escopo')} required
-                placeholder="Quais processos, turnos, linhas e locais entram nesta auditoria"
-                dica="Delimite o que está dentro e o que está fora. Isso evita discussão na reunião de encerramento." />
-              <AreaTexto rotulo="Objetivo" value={form.objetivo} onChange={definir('objetivo')} required
-                placeholder="O que esta auditoria pretende verificar"
-                dica="Objetivo claro orienta a amostragem e o nível de profundidade." />
-              <AreaTexto rotulo="Critério da auditoria" value={form.criterio} onChange={definir('criterio')} required
-                placeholder="Norma, procedimentos internos, requisitos legais e de clientes"
-                dica="É a régua da auditoria: toda não conformidade precisa apontar um critério descumprido." />
-            </div>
-          </Cartao>
-
-          <div className="flex flex-wrap items-center justify-end gap-3 pb-6">
-            <Link href="/painel"><Botao type="button" variante="contorno">Cancelar</Botao></Link>
-            <Botao type="submit" variante="primario" tamanho="g">
-              Iniciar auditoria <IconeSeta tamanho={17} />
-            </Botao>
-          </div>
-        </form>
+            </motion.section>
+          );
+        })}
       </main>
+
+      {/* Barra de confirmação: aparece só quando há um setor escolhido */}
+      <AnimatePresence>
+        {escolhido && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+            className="fixed inset-x-0 bottom-0 z-40 px-4 pb-5 nao-imprimir"
+          >
+            <div className="vidro mx-auto w-full max-w-[820px] rounded-xl3 border p-4 shadow-nivel2 sm:p-5">
+              <div className="flex flex-wrap items-end gap-4">
+                <div className="min-w-[180px] flex-1">
+                  <p className="text-[11px] uppercase tracking-wide text-texto3">Setor</p>
+                  <p className="truncate text-[17px] font-semibold tracking-[-.02em]">{escolhido.nome}</p>
+                  <p className="mt-0.5 text-[12px] tabular-nums text-texto3">{resumo?.itens} verificações</p>
+                </div>
+
+                <label className="min-w-[190px] flex-1">
+                  <span className="rotulo">Empresa ou unidade</span>
+                  <input
+                    value={empresa}
+                    onChange={(e) => setEmpresa(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && iniciar()}
+                    placeholder="Ex.: Unidade Sul"
+                    autoFocus
+                    className="campo py-2.5 text-[15px]"
+                  />
+                </label>
+
+                <div>
+                  <span className="rotulo">Normas</span>
+                  <div className="flex gap-1.5">
+                    {NORMAS.map((n) => {
+                      const ativo = normas.includes(n.id);
+                      return (
+                        <button
+                          key={n.id}
+                          onClick={() => alternarNorma(n.id)}
+                          aria-pressed={ativo}
+                          title={`${n.nome}:${n.ano} — ${n.foco}`}
+                          className={`rounded-pill border px-3 py-2 text-[12.5px] font-medium tabular-nums transition-all duration-200
+                                      ${ativo ? CORES[n.id].ativo : 'text-texto3 hover:bg-texto/[.05]'}`}
+                        >
+                          {n.sigla}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <Botao
+                  variante="primario" tamanho="m"
+                  onClick={iniciar}
+                  disabled={!empresa.trim() || normas.length === 0 || iniciando}
+                >
+                  {iniciando ? 'Abrindo…' : 'Iniciar'}<IconeSeta tamanho={16} />
+                </Botao>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

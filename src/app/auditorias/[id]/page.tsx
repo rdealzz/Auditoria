@@ -5,18 +5,19 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import Navegacao from '@/components/Navegacao';
-import ExplicacaoEtapa from '@/components/ExplicacaoEtapa';
-import ItemChecklist from '@/components/ItemChecklist';
+import AberturaBloco from '@/components/AberturaBloco';
+import CartaoVerificacao from '@/components/CartaoVerificacao';
 import ModalNC from '@/components/ModalNC';
 import PainelAssistente from '@/components/PainelAssistente';
 import Conclusao from '@/components/Conclusao';
-import { Botao, Etiqueta } from '@/components/ui';
+import { Botao } from '@/components/ui';
 import { IconeCheck, IconeSeta, IconeVoltar } from '@/components/Icones';
-import { ETAPAS, TOTAL_ETAPAS, etapaPorNumero } from '@/dados/etapas';
-import { nomeNorma, setorPorId } from '@/dados/normas';
-import type { Auditoria, ItemChecklist as TItem, NaoConformidade } from '@/lib/tipos';
+import { roteiroDoSetor } from '@/dados/montagem-roteiro';
+import { setorPorId } from '@/dados/setores';
+import { clausulas, NORMAS } from '@/dados/sgi';
+import type { Auditoria, NaoConformidade, Verificacao } from '@/lib/tipos';
 import {
-  idNovo, itemVazio, obterAuditoria, progressoEtapa, progressoGeral, salvarAuditoria
+  idNovo, obterAuditoria, progressoBloco, progressoGeral, salvarAuditoria, verificacaoVazia
 } from '@/lib/armazenamento';
 import { useApp } from '@/app/provedores';
 
@@ -26,17 +27,16 @@ export default function PaginaAuditoria() {
   const { usuario, avisar } = useApp();
 
   const [auditoria, setAuditoria] = useState<Auditoria | null>(null);
-  const [naoEncontrada, setNaoEncontrada] = useState(false);
+  const [ausente, setAusente] = useState(false);
   const [ncEmEdicao, setNcEmEdicao] = useState<NaoConformidade | null>(null);
   const topo = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const a = obterAuditoria(id);
     if (a) setAuditoria(a);
-    else setNaoEncontrada(true);
+    else setAusente(true);
   }, [id]);
 
-  /* Contabiliza o tempo efetivo com a auditoria aberta. */
   useEffect(() => {
     if (!auditoria || auditoria.status === 'concluida') return;
     const t = setInterval(() => {
@@ -49,205 +49,192 @@ export default function PaginaAuditoria() {
     setAuditoria((a) => (a ? salvarAuditoria({ ...a, ...mudanca }) : a));
   }, []);
 
-  const etapa = auditoria ? etapaPorNumero(auditoria.etapaAtual) : undefined;
+  const blocos = useMemo(() => (auditoria ? roteiroDoSetor(auditoria.setor) : []), [auditoria?.setor]);
   const setor = auditoria ? setorPorId(auditoria.setor) : undefined;
+  const bloco = blocos[auditoria?.blocoAtual ?? 0];
 
   const contexto = useMemo(
     () => auditoria && {
-      empresa: auditoria.empresa, setor: setor?.nome ?? auditoria.setor, processo: auditoria.processo,
-      norma: nomeNorma(auditoria.norma), auditor: auditoria.auditor, auditado: auditoria.auditado,
-      criterio: auditoria.criterio, etapa: auditoria.etapaAtual
+      empresa: auditoria.empresa, setor: setor?.nome ?? auditoria.setor, setorId: auditoria.setor,
+      auditor: auditoria.auditor, auditado: auditoria.auditado,
+      normas: NORMAS.filter((n) => auditoria.normas.includes(n.id)).map((n) => n.nome).join(', ')
     },
     [auditoria, setor]
   );
 
-  if (naoEncontrada) {
+  if (ausente) {
     return (
       <>
         <Navegacao />
-        <main className="mx-auto max-w-conteudo px-5 py-20 text-center">
+        <main className="mx-auto max-w-conteudo px-6 py-24 text-center">
           <h1 className="text-[26px] font-semibold">Auditoria não encontrada</h1>
           <p className="mt-2 text-[15px] text-texto3">Ela pode ter sido excluída ou criada em outro navegador.</p>
-          <Link href="/painel" className="mt-6 inline-block"><Botao variante="primario">Voltar ao painel</Botao></Link>
+          <Link href="/painel" className="mt-7 inline-block"><Botao variante="primario">Voltar ao painel</Botao></Link>
         </main>
       </>
     );
   }
 
-  if (!usuario || !auditoria || !etapa || !contexto) return <Navegacao />;
+  if (!usuario || !auditoria || !bloco || !contexto) return <Navegacao />;
 
-  const emExplicacao = !auditoria.etapasLiberadas.includes(etapa.numero);
-  const progEtapa = progressoEtapa(auditoria, etapa.numero);
-  const progGeral = progressoGeral(auditoria);
-  const etapaCompleta = progEtapa.respondidos === progEtapa.total;
-  const ultimaEtapa = etapa.numero === TOTAL_ETAPAS;
+  const emAbertura = !auditoria.blocosLiberados.includes(bloco.id);
+  const prog = progressoBloco(auditoria, bloco.id);
+  const geral = progressoGeral(auditoria);
+  const completo = prog.respondidos === prog.total;
+  const ultimo = auditoria.blocoAtual === blocos.length - 1;
 
-  /* ───────────── ações ───────────── */
+  /* ───────── ações ───────── */
 
-  function liberarVerificacao() {
-    atualizar({ etapasLiberadas: [...auditoria!.etapasLiberadas, etapa!.numero] });
+  function liberar() {
+    atualizar({ blocosLiberados: [...auditoria!.blocosLiberados, bloco.id] });
     setTimeout(() => topo.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
   }
 
-  function mudarItem(item: TItem) {
-    atualizar({ itens: { ...auditoria!.itens, [item.requisitoId]: item } });
+  function mudarVerificacao(v: Verificacao) {
+    atualizar({ verificacoes: { ...auditoria!.verificacoes, [v.itemId]: v } });
   }
 
-  function irPara(numero: number) {
-    if (numero < 1 || numero > TOTAL_ETAPAS) return;
-    atualizar({ etapaAtual: numero });
+  function irPara(indice: number) {
+    if (indice < 0 || indice >= blocos.length) return;
+    atualizar({ blocoAtual: indice });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function concluirEtapa() {
-    if (!etapaCompleta) return avisar('Responda todos os requisitos antes de avançar.');
-    const concluidas = auditoria!.etapasConcluidas.includes(etapa!.numero)
-      ? auditoria!.etapasConcluidas
-      : [...auditoria!.etapasConcluidas, etapa!.numero];
-    atualizar({ etapasConcluidas: concluidas, etapaAtual: Math.min(TOTAL_ETAPAS, etapa!.numero + 1) });
-    avisar(`Etapa ${etapa!.numero} concluída.`);
+  function concluirBloco() {
+    if (!completo) return avisar('Responda todas as verificações antes de avançar.');
+    const concluidos = auditoria!.blocosConcluidos.includes(bloco.id)
+      ? auditoria!.blocosConcluidos
+      : [...auditoria!.blocosConcluidos, bloco.id];
+    atualizar({ blocosConcluidos: concluidos, blocoAtual: Math.min(blocos.length - 1, auditoria!.blocoAtual + 1) });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function abrirNC(requisitoId: string) {
-    const existente = auditoria!.naoConformidades.find((n) => n.requisitoId === requisitoId);
+  function abrirNC(itemId: string) {
+    const existente = auditoria!.naoConformidades.find((n) => n.itemId === itemId);
     if (existente) return setNcEmEdicao(existente);
 
-    const req = etapa!.requisitos.find((r) => r.id === requisitoId)!;
-    const item = auditoria!.itens[requisitoId];
+    const item = bloco.itens.find((i) => i.id === itemId)!;
+    const v = auditoria!.verificacoes[itemId];
+    const refs = clausulas(item.chavesClausulas);
     setNcEmEdicao({
       id: idNovo(),
-      requisitoId,
-      etapa: etapa!.numero,
-      clausula: req.clausula,
+      itemId,
+      blocoId: bloco.id,
+      chavesClausulas: item.chavesClausulas,
       classificacao: 'menor',
-      descricao: item?.comentario ?? '',
-      evidenciaObjetiva: item?.evidencia ?? '',
-      requisitoDescumprido: `${req.clausula} — ${req.titulo} (${nomeNorma(auditoria!.norma)})`,
+      descricao: v?.comentario ?? '',
+      evidenciaObjetiva: v?.evidencia ?? '',
+      requisitoDescumprido: refs.map((c) => `${c.norma.replace('iso', 'ISO ')} ${c.codigo} — ${c.titulo}`).join('; '),
       criadaEm: new Date().toISOString()
     });
   }
 
   function salvarNC(nc: NaoConformidade) {
-    const outras = auditoria!.naoConformidades.filter((n) => n.id !== nc.id);
-    atualizar({ naoConformidades: [...outras, nc] });
+    atualizar({ naoConformidades: [...auditoria!.naoConformidades.filter((n) => n.id !== nc.id), nc] });
     setNcEmEdicao(null);
     avisar('Não conformidade registrada.');
-  }
-
-  function excluirNC(ncId: string) {
-    atualizar({ naoConformidades: auditoria!.naoConformidades.filter((n) => n.id !== ncId) });
-    setNcEmEdicao(null);
   }
 
   function concluirAuditoria() {
     atualizar({
       status: 'concluida',
       concluidaEm: new Date().toISOString(),
-      etapasConcluidas: ETAPAS.map((e) => e.numero)
+      blocosConcluidos: blocos.map((b) => b.id)
     });
-    avisar('Auditoria concluída. Gerando relatório…');
-    setTimeout(() => router.push(`/auditorias/${auditoria!.id}/relatorio`), 500);
+    avisar('Auditoria concluída.');
+    setTimeout(() => router.push(`/auditorias/${auditoria!.id}/relatorio`), 450);
   }
 
-  /* ───────────── interface ───────────── */
+  /* ───────── interface ───────── */
 
   return (
     <>
       <Navegacao />
 
-      {/* Barra de progresso das etapas */}
       <div className="vidro sticky top-[54px] z-40 border-b nao-imprimir">
-        <div className="mx-auto max-w-conteudo px-5 py-3 sm:px-7">
-          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-            <div className="flex items-baseline gap-2.5">
-              <span className="text-[14px] font-semibold tracking-[-.01em]">
-                Passo {etapa.numero} de {TOTAL_ETAPAS}
-              </span>
-              <span className="text-[13px] text-texto3">{etapa.titulo}</span>
-            </div>
-            <span className="text-[13px] font-semibold tabular-nums text-acento">{progGeral.percentual}%</span>
+        <div className="mx-auto max-w-[880px] px-6 py-3 sm:px-8">
+          <div className="mb-2.5 flex items-baseline justify-between gap-3">
+            <p className="truncate text-[13px] text-texto3">
+              <span className="font-medium text-texto2">{setor?.nome}</span>
+              <span className="mx-1.5 opacity-40">·</span>{auditoria.empresa}
+            </p>
+            <p className="shrink-0 text-[13px] font-semibold tabular-nums text-acento">{geral.percentual}%</p>
           </div>
-
           <div className="flex gap-1">
-            {ETAPAS.map((e) => {
-              const concluida = auditoria.etapasConcluidas.includes(e.numero);
-              const atual = e.numero === etapa.numero;
-              const acessivel = concluida || e.numero <= Math.max(...auditoria.etapasConcluidas, 0) + 1;
+            {blocos.map((b, i) => {
+              const feito = auditoria.blocosConcluidos.includes(b.id);
+              const atual = i === auditoria.blocoAtual;
+              const acessivel = feito || i <= auditoria.blocosConcluidos.length;
               return (
                 <button
-                  key={e.numero}
-                  onClick={() => acessivel && irPara(e.numero)}
+                  key={b.id}
+                  onClick={() => acessivel && irPara(i)}
                   disabled={!acessivel}
-                  title={`Etapa ${e.numero} — ${e.titulo}`}
-                  aria-label={`Etapa ${e.numero}: ${e.titulo}`}
-                  className={`h-1.5 flex-1 rounded-pill transition-all duration-500 ease-apple
-                    ${concluida ? 'bg-verde' : atual ? 'bg-acento' : 'bg-texto/[.12]'}
-                    ${acessivel ? 'cursor-pointer hover:opacity-75' : 'cursor-not-allowed'}`}
+                  title={b.titulo}
+                  aria-label={`Bloco ${i + 1}: ${b.titulo}`}
+                  className={`h-1 flex-1 rounded-pill transition-all duration-500 ease-apple
+                    ${feito ? 'bg-verde' : atual ? 'bg-acento' : 'bg-texto/[.12]'}
+                    ${acessivel ? 'cursor-pointer hover:opacity-70' : 'cursor-not-allowed'}`}
                 />
               );
             })}
           </div>
-
-          <div className="mt-2 flex items-center justify-between text-[11.5px] text-texto3">
-            <span>{auditoria.codigo} · {setor?.nome} · {auditoria.empresa}</span>
-            <span className="tabular-nums">
-              {emExplicacao ? 'Explicação' : `${progEtapa.respondidos}/${progEtapa.total} requisitos nesta etapa`}
-            </span>
-          </div>
         </div>
       </div>
 
-      <main ref={topo} className="mx-auto max-w-conteudo px-5 py-8 sm:px-7">
+      <main ref={topo} className="mx-auto max-w-[880px] px-6 sm:px-8">
         <AnimatePresence mode="wait">
-          {emExplicacao ? (
+          {emAbertura ? (
             <motion.div
-              key={`explicacao-${etapa.numero}`}
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+              key={`abertura-${bloco.id}`}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
             >
-              <ExplicacaoEtapa etapa={etapa} setor={setor} aoIniciar={liberarVerificacao} />
+              <AberturaBloco
+                bloco={bloco}
+                numero={auditoria.blocoAtual + 1}
+                total={blocos.length}
+                aoIniciar={liberar}
+              />
             </motion.div>
           ) : (
             <motion.div
-              key={`verificacao-${etapa.numero}`}
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-              className="pb-28"
+              key={`verificacao-${bloco.id}`}
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
+              className="py-10 pb-32"
             >
-              <header className="mb-6">
-                <div className="mb-2.5 flex flex-wrap items-center gap-2">
-                  <Etiqueta tom="acento">Etapa {etapa.numero}</Etiqueta>
-                  <Etiqueta tom={etapaCompleta ? 'verde' : 'neutro'}>
-                    {progEtapa.respondidos} de {progEtapa.total} verificados
-                  </Etiqueta>
-                </div>
-                <h1 className="text-[28px] font-semibold tracking-[-.03em] sm:text-[34px]">{etapa.titulo}</h1>
-                <p className="mt-1.5 text-[15px] text-texto3">Checklist inteligente — marque cada requisito e registre a evidência.</p>
+              <header className="mb-8">
+                <p className="text-[12.5px] font-medium tabular-nums tracking-wide text-texto3">
+                  Bloco {auditoria.blocoAtual + 1} de {blocos.length}
+                  <span className="mx-2 opacity-40">·</span>
+                  {prog.respondidos} de {prog.total} verificadas
+                </p>
+                <h1 className="mt-2 text-[30px] font-semibold tracking-[-.03em] sm:text-[36px]">{bloco.titulo}</h1>
                 <button
-                  onClick={() => atualizar({ etapasLiberadas: auditoria.etapasLiberadas.filter((n) => n !== etapa.numero) })}
-                  className="mt-3 text-[13px] text-acento hover:underline"
+                  onClick={() => atualizar({ blocosLiberados: auditoria.blocosLiberados.filter((b) => b !== bloco.id) })}
+                  className="mt-3 text-[13px] text-acento transition-opacity hover:opacity-70"
                 >
-                  Rever a explicação desta etapa
+                  Rever a abertura do bloco
                 </button>
               </header>
 
               <div className="space-y-4">
-                {etapa.requisitos.map((r, i) => (
-                  <ItemChecklist
-                    key={r.id}
-                    requisito={r}
+                {bloco.itens.map((item, i) => (
+                  <CartaoVerificacao
+                    key={item.id}
+                    item={item}
                     indice={i}
-                    item={auditoria.itens[r.id] ?? itemVazio(r.id)}
+                    verificacao={auditoria.verificacoes[item.id] ?? verificacaoVazia(item.id, bloco.id)}
                     contexto={contexto}
-                    aoMudar={mudarItem}
-                    aoAbrirNC={() => abrirNC(r.id)}
-                    temNC={auditoria.naoConformidades.some((n) => n.requisitoId === r.id)}
+                    aoMudar={mudarVerificacao}
+                    aoAbrirNC={() => abrirNC(item.id)}
+                    temNC={auditoria.naoConformidades.some((n) => n.itemId === item.id)}
                   />
                 ))}
               </div>
 
-              {ultimaEtapa && etapaCompleta && (
+              {ultimo && completo && (
                 <Conclusao auditoria={auditoria} aoAtualizar={atualizar} aoConcluir={concluirAuditoria} />
               )}
             </motion.div>
@@ -255,30 +242,22 @@ export default function PaginaAuditoria() {
         </AnimatePresence>
       </main>
 
-      {/* Navegação inferior da verificação */}
-      {!emExplicacao && (
-        <div className="fixed inset-x-0 bottom-0 z-40 nao-imprimir">
-          <div className="vidro mx-auto mb-5 flex w-[min(680px,calc(100vw-2rem))] items-center gap-3 rounded-pill border px-4 py-3 shadow-nivel2">
-            <Botao variante="suave" tamanho="p" onClick={() => irPara(etapa.numero - 1)} disabled={etapa.numero === 1}>
-              <IconeVoltar tamanho={15} />Anterior
+      {!emAbertura && (
+        <div className="fixed inset-x-0 bottom-0 z-40 px-4 pb-5 nao-imprimir">
+          <div className="vidro mx-auto flex w-full max-w-[560px] items-center gap-3 rounded-pill border px-4 py-2.5 shadow-nivel2">
+            <Botao variante="suave" tamanho="p" onClick={() => irPara(auditoria.blocoAtual - 1)} disabled={auditoria.blocoAtual === 0}>
+              <IconeVoltar tamanho={15} />
             </Botao>
-
-            <div className="min-w-0 flex-1 text-center">
-              <p className="truncate text-[12.5px] font-medium">
-                {etapaCompleta ? 'Etapa completa' : `Faltam ${progEtapa.total - progEtapa.respondidos} requisitos`}
-              </p>
-              <p className="truncate text-[11px] text-texto3">
-                {auditoria.naoConformidades.filter((n) => n.etapa === etapa.numero).length} NC nesta etapa
-              </p>
-            </div>
-
-            {ultimaEtapa ? (
-              <Botao variante="primario" tamanho="p" onClick={concluirAuditoria} disabled={!etapaCompleta}>
+            <p className="min-w-0 flex-1 truncate text-center text-[12.5px] text-texto3">
+              {completo ? 'Bloco completo' : `Faltam ${prog.total - prog.respondidos}`}
+            </p>
+            {ultimo ? (
+              <Botao variante="primario" tamanho="p" onClick={concluirAuditoria} disabled={!completo}>
                 <IconeCheck tamanho={15} />Concluir
               </Botao>
             ) : (
-              <Botao variante="primario" tamanho="p" onClick={concluirEtapa} disabled={!etapaCompleta}>
-                Próxima etapa <IconeSeta tamanho={15} />
+              <Botao variante="primario" tamanho="p" onClick={concluirBloco} disabled={!completo}>
+                Próximo <IconeSeta tamanho={15} />
               </Botao>
             )}
           </div>
@@ -293,7 +272,10 @@ export default function PaginaAuditoria() {
           aoFechar={() => setNcEmEdicao(null)}
           aoExcluir={
             auditoria.naoConformidades.some((n) => n.id === ncEmEdicao.id)
-              ? () => excluirNC(ncEmEdicao.id)
+              ? () => {
+                  atualizar({ naoConformidades: auditoria.naoConformidades.filter((n) => n.id !== ncEmEdicao.id) });
+                  setNcEmEdicao(null);
+                }
               : undefined
           }
         />

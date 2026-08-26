@@ -6,7 +6,9 @@ import { motion } from 'framer-motion';
 import { useApp } from './provedores';
 import { Botao } from '@/components/ui';
 import { IconeCadeado, IconeEscudo, IconeUsuario } from '@/components/Icones';
-import { TOTAL_ETAPAS, TOTAL_REQUISITOS } from '@/dados/etapas';
+import { SETORES } from '@/dados/setores';
+import { NORMAS } from '@/dados/sgi';
+import { resumoSetor } from '@/dados/montagem-roteiro';
 
 export default function Login() {
   const { entrar, usuario, carregando } = useApp();
@@ -52,7 +54,7 @@ export default function Login() {
           </span>
           <h1 className="text-[34px] font-semibold tracking-[-.03em] text-texto">Auditoria</h1>
           <p className="mx-auto mt-2 max-w-[300px] text-[15px] leading-snug text-texto3">
-            Assistente guiado de auditorias da qualidade
+            Auditorias do Sistema de Gestão Integrado
           </p>
         </div>
 
@@ -102,9 +104,9 @@ export default function Login() {
 
         <div className="mt-7 flex justify-center gap-7 text-center">
           {[
-            { n: TOTAL_ETAPAS, t: 'etapas guiadas' },
-            { n: TOTAL_REQUISITOS, t: 'requisitos ISO' },
-            { n: '10', t: 'setores prontos' }
+            { n: SETORES.length, t: 'setores' },
+            { n: SETORES.reduce((n, s) => n + resumoSetor(s).itens, 0), t: 'verificações' },
+            { n: NORMAS.length, t: 'normas do SGI' }
           ].map((i) => (
             <div key={i.t}>
               <p className="text-[19px] font-semibold tabular-nums text-texto">{i.n}</p>

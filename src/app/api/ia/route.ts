@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { ETAPAS } from '@/dados/etapas';
+import { itemPorId } from '@/dados/montagem-roteiro';
+import { clausulas } from '@/dados/sgi';
 
 export const runtime = 'nodejs';
 
@@ -104,7 +105,7 @@ function motorLocal(p: Pedido): Resposta {
     }
 
     case 'explicar_requisito':
-      return { motor: 'local', texto: explicarRequisito(String(c.requisitoId ?? '')) };
+      return { motor: 'local', texto: explicarRequisito(String(c.setorId ?? ''), String(c.itemId ?? '')) };
 
     case 'plano_acao':
       return { motor: 'local', texto: JSON.stringify(gerarPlano(t, c)) };
@@ -144,20 +145,20 @@ function redigirNC(rascunho: string, c: Record<string, any>) {
   );
 }
 
-function explicarRequisito(requisitoId: string) {
-  for (const etapa of ETAPAS) {
-    const r = etapa.requisitos.find((x) => x.id === requisitoId);
-    if (r) {
-      return (
-        `Cláusula ${r.clausula} — ${r.titulo}\n\n` +
-        `O que a norma pede: ${r.resumoNorma}\n\n` +
-        `Em linguagem simples: ${r.explicacaoSimples}\n\n` +
-        `Como verificar na prática:\n${r.comoVerificar.map((v) => `• ${v}`).join('\n')}\n\n` +
-        `Evidência típica: ${r.evidenciaTipica}.`
-      );
-    }
-  }
-  return 'Selecione um requisito do checklist para ver a explicação detalhada.';
+function explicarRequisito(setorId: string, itemId: string) {
+  const item = itemPorId(setorId, itemId);
+  if (!item) return 'Selecione uma verificação do roteiro para ver a explicação detalhada.';
+  const refs = clausulas(item.chavesClausulas)
+    .map((c) => `• ${c.codigo} — ${c.titulo} (${c.norma.replace('iso', 'ISO ')})`)
+    .join('\n');
+  return (
+    `${item.titulo}\n\n` +
+    `Requisitos atendidos:\n${refs}\n\n` +
+    `O que verificar na prática:\n${item.verificar.map((v) => `• ${v}`).join('\n')}\n\n` +
+    `Evidência objetiva a exigir:\n${item.evidencias.map((e) => `• ${e}`).join('\n')}\n\n` +
+    `Riscos e não conformidades comuns:\n${item.riscos.map((r) => `• ${r}`).join('\n')}\n\n` +
+    `Como validar: ${item.validar}`
+  );
 }
 
 function gerarPlano(descricao: string, c: Record<string, any>) {
@@ -242,7 +243,7 @@ const CATALOGO: { chaves: string[]; rotulo: string; itens: string[] }[] = [
 
 function analisarAnexo(nomeArquivo: string, c: Record<string, any>) {
   const nome = nomeArquivo.toLowerCase();
-  const achado = CATALOGO.find((x) => x.chaves.some((k) => nome.includes(k)));
+  const achado = CATALOGO.find((x) => x.chaves.some((k: string) => nome.includes(k)));
 
   if (achado) {
     return {
@@ -287,7 +288,7 @@ const RESPOSTAS: { chaves: string[]; texto: string }[] = [
 
 function responderDuvida(pergunta: string) {
   const p = pergunta.toLowerCase();
-  const achado = RESPOSTAS.find((r) => r.chaves.some((k) => p.includes(k)));
+  const achado = RESPOSTAS.find((r) => r.chaves.some((k: string) => p.includes(k)));
   if (achado) return achado.texto;
   return (
     'Não tenho uma resposta pronta para essa pergunta no motor local. Para ativar respostas abertas, configure a variável OPENAI_API_KEY.\n\n' +

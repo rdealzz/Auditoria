@@ -1,12 +1,15 @@
 'use client';
 
-import type { Auditoria, ItemChecklist, Metricas, Usuario } from './tipos';
-import { ETAPAS, TOTAL_REQUISITOS } from '@/dados/etapas';
+import type { Auditoria, Metricas, Usuario, Verificacao } from './tipos';
+import { roteiroDoSetor } from '@/dados/montagem-roteiro';
+import { setorPorId } from '@/dados/setores';
+import { totalItens } from '@/dados/roteiro';
+import { NORMAS, type NormaId } from '@/dados/sgi';
 import { obterSupabase, supabaseAtivo } from './supabase';
 
-const CHAVE_AUDITORIAS = 'auditoria.auditorias.v1';
+const CHAVE_AUDITORIAS = 'auditoria.auditorias.v2';
 const CHAVE_SESSAO = 'auditoria.sessao.v1';
-const CHAVE_USUARIOS = 'auditoria.usuarios.v1';
+const CHAVE_PREFERENCIAS = 'auditoria.preferencias.v1';
 
 /* ────────────────────────── util ────────────────────────── */
 
@@ -35,6 +38,16 @@ function gravar(chave: string, valor: unknown) {
   }
 }
 
+/* ────────────────────────── preferências ────────────────────────── */
+
+type Preferencias = { empresa: string; auditor: string; normas: NormaId[] };
+
+export const lerPreferencias = (): Preferencias =>
+  ler<Preferencias>(CHAVE_PREFERENCIAS, { empresa: '', auditor: '', normas: NORMAS.map((n) => n.id) });
+
+export const gravarPreferencias = (p: Partial<Preferencias>) =>
+  gravar(CHAVE_PREFERENCIAS, { ...lerPreferencias(), ...p });
+
 /* ────────────────────────── auditorias ────────────────────────── */
 
 export function listarAuditorias(): Auditoria[] {
@@ -43,9 +56,7 @@ export function listarAuditorias(): Auditoria[] {
   );
 }
 
-export function obterAuditoria(id: string): Auditoria | undefined {
-  return listarAuditorias().find((a) => a.id === id);
-}
+export const obterAuditoria = (id: string) => listarAuditorias().find((a) => a.id === id);
 
 export function salvarAuditoria(auditoria: Auditoria) {
   const todas = ler<Auditoria[]>(CHAVE_AUDITORIAS, []);
@@ -58,9 +69,8 @@ export function salvarAuditoria(auditoria: Auditoria) {
   return atualizada;
 }
 
-export function excluirAuditoria(id: string) {
+export const excluirAuditoria = (id: string) =>
   gravar(CHAVE_AUDITORIAS, ler<Auditoria[]>(CHAVE_AUDITORIAS, []).filter((a) => a.id !== id));
-}
 
 async function sincronizar(auditoria: Auditoria) {
   const sb = obterSupabase();
@@ -72,27 +82,37 @@ async function sincronizar(auditoria: Auditoria) {
   }
 }
 
-export function novaAuditoria(base: Partial<Auditoria>): Auditoria {
+/** Gera escopo, objetivo e critério a partir do setor e das normas — o auditor não precisa digitar. */
+export function textosPadrao(setorId: string, normas: NormaId[]) {
+  const setor = setorPorId(setorId);
+  const nomes = NORMAS.filter((n) => normas.includes(n.id)).map((n) => `${n.nome}:${n.ano}`).join(', ');
+  const nome = setor?.nome ?? setorId;
+  return {
+    escopo: `Processos e atividades do setor de ${nome}, incluindo todos os turnos em operação na data da auditoria e as atividades executadas por terceiros dentro da área.`,
+    objetivo: `Verificar a conformidade das atividades do setor de ${nome} com os requisitos de ${nomes} e com os procedimentos internos, identificando não conformidades, riscos e oportunidades de melhoria.`,
+    criterio: `${nomes}; procedimentos, instruções de trabalho e planos de controle aplicáveis ao setor; requisitos legais e contratuais pertinentes.`
+  };
+}
+
+export function novaAuditoria(base: Partial<Auditoria> & { setor: string }): Auditoria {
   const agora = new Date().toISOString();
   const sequencia = listarAuditorias().length + 1;
+  const normas = base.normas ?? NORMAS.map((n) => n.id);
+  const textos = textosPadrao(base.setor, normas);
   return {
     id: idNovo(),
     codigo: `AUD-${new Date().getFullYear()}-${String(sequencia).padStart(3, '0')}`,
-    norma: 'iso9001',
-    setor: 'producao',
-    processo: '',
+    normas,
     empresa: '',
     auditor: '',
     auditado: '',
     data: agora.slice(0, 10),
-    escopo: '',
-    objetivo: '',
-    criterio: '',
-    status: 'rascunho',
-    etapaAtual: 1,
-    etapasConcluidas: [],
-    etapasLiberadas: [],
-    itens: {},
+    ...textos,
+    status: 'em_andamento',
+    blocoAtual: 0,
+    blocosLiberados: [],
+    blocosConcluidos: [],
+    verificacoes: {},
     naoConformidades: [],
     assinaturas: [],
     observacoesFinais: '',
@@ -103,78 +123,57 @@ export function novaAuditoria(base: Partial<Auditoria>): Auditoria {
   };
 }
 
-export function itemVazio(requisitoId: string): ItemChecklist {
-  const etapa = ETAPAS.find((e) => e.requisitos.some((r) => r.id === requisitoId));
-  const req = etapa?.requisitos.find((r) => r.id === requisitoId);
-  return {
-    requisitoId,
-    etapa: etapa?.numero ?? 0,
-    clausula: req?.clausula ?? '',
-    titulo: req?.titulo ?? '',
-    comentario: '',
-    evidencia: '',
-    anexos: []
-  };
-}
+export const verificacaoVazia = (itemId: string, blocoId: string): Verificacao => ({
+  itemId, blocoId, comentario: '', evidencia: '', anexos: []
+});
 
-/* ────────────────────────── métricas ────────────────────────── */
+/* ────────────────────────── progresso e métricas ────────────────────────── */
 
-export function progressoEtapa(auditoria: Auditoria, numeroEtapa: number) {
-  const etapa = ETAPAS.find((e) => e.numero === numeroEtapa);
-  if (!etapa) return { respondidos: 0, total: 0, percentual: 0 };
-  const total = etapa.requisitos.length;
-  const respondidos = etapa.requisitos.filter((r) => auditoria.itens[r.id]?.resposta).length;
-  return { respondidos, total, percentual: total ? Math.round((respondidos / total) * 100) : 0 };
+export function progressoBloco(auditoria: Auditoria, blocoId: string) {
+  const bloco = roteiroDoSetor(auditoria.setor).find((b) => b.id === blocoId);
+  if (!bloco) return { respondidos: 0, total: 0, percentual: 0 };
+  const respondidos = bloco.itens.filter((i) => auditoria.verificacoes[i.id]?.resposta).length;
+  return { respondidos, total: bloco.itens.length, percentual: bloco.itens.length ? Math.round((respondidos / bloco.itens.length) * 100) : 0 };
 }
 
 export function progressoGeral(auditoria: Auditoria) {
-  const respondidos = Object.values(auditoria.itens).filter((i) => i.resposta).length;
-  return {
-    respondidos,
-    total: TOTAL_REQUISITOS,
-    percentual: Math.round((respondidos / TOTAL_REQUISITOS) * 100)
-  };
+  const total = totalItens(roteiroDoSetor(auditoria.setor));
+  const respondidos = Object.values(auditoria.verificacoes).filter((v) => v.resposta).length;
+  return { respondidos, total, percentual: total ? Math.round((respondidos / total) * 100) : 0 };
 }
 
 export function taxaConformidade(auditoria: Auditoria) {
-  const itens = Object.values(auditoria.itens).filter((i) => i.resposta && i.resposta !== 'nao_aplicavel');
-  if (!itens.length) return 0;
-  const conformes = itens.filter((i) => i.resposta === 'conforme').length;
-  return Math.round((conformes / itens.length) * 100);
+  const avaliadas = Object.values(auditoria.verificacoes).filter((v) => v.resposta && v.resposta !== 'nao_aplicavel');
+  if (!avaliadas.length) return 0;
+  return Math.round((avaliadas.filter((v) => v.resposta === 'conforme').length / avaliadas.length) * 100);
 }
 
 export function contarPorResposta(auditoria: Auditoria) {
-  const itens = Object.values(auditoria.itens);
+  const v = Object.values(auditoria.verificacoes);
   return {
-    conforme: itens.filter((i) => i.resposta === 'conforme').length,
-    nao_conforme: itens.filter((i) => i.resposta === 'nao_conforme').length,
-    observacao: itens.filter((i) => i.resposta === 'observacao').length,
-    nao_aplicavel: itens.filter((i) => i.resposta === 'nao_aplicavel').length
+    conforme: v.filter((x) => x.resposta === 'conforme').length,
+    nao_conforme: v.filter((x) => x.resposta === 'nao_conforme').length,
+    observacao: v.filter((x) => x.resposta === 'observacao').length,
+    nao_aplicavel: v.filter((x) => x.resposta === 'nao_aplicavel').length
   };
 }
 
 export function calcularMetricas(auditorias: Auditoria[]): Metricas {
   const concluidas = auditorias.filter((a) => a.status === 'concluida');
-  const emAndamento = auditorias.filter((a) => a.status === 'em_andamento');
-  const pendentes = auditorias.filter((a) => a.status === 'rascunho');
-  const totalNC = auditorias.reduce((n, a) => n + a.naoConformidades.length, 0);
-
-  const avaliados = auditorias.flatMap((a) =>
-    Object.values(a.itens).filter((i) => i.resposta && i.resposta !== 'nao_aplicavel')
+  const avaliadas = auditorias.flatMap((a) =>
+    Object.values(a.verificacoes).filter((v) => v.resposta && v.resposta !== 'nao_aplicavel')
   );
-  const conformes = avaliados.filter((i) => i.resposta === 'conforme').length;
-
   const tempos = concluidas.map((a) => a.tempoTotalMin).filter((t) => t > 0);
-
   return {
     total: auditorias.length,
-    emAndamento: emAndamento.length,
+    emAndamento: auditorias.length - concluidas.length,
     concluidas: concluidas.length,
-    pendentes: pendentes.length,
-    totalNC,
-    taxaConformidade: avaliados.length ? Math.round((conformes / avaliados.length) * 100) : 0,
+    totalNC: auditorias.reduce((n, a) => n + a.naoConformidades.length, 0),
+    taxaConformidade: avaliadas.length
+      ? Math.round((avaliadas.filter((v) => v.resposta === 'conforme').length / avaliadas.length) * 100)
+      : 0,
     tempoMedioMin: tempos.length ? Math.round(tempos.reduce((a, b) => a + b, 0) / tempos.length) : 0,
-    itensRespondidos: auditorias.reduce((n, a) => n + Object.values(a.itens).filter((i) => i.resposta).length, 0)
+    verificacoesFeitas: auditorias.reduce((n, a) => n + Object.values(a.verificacoes).filter((v) => v.resposta).length, 0)
   };
 }
 
@@ -188,27 +187,19 @@ const USUARIO_SEMENTE: Usuario = {
   criadoEm: new Date('2026-01-01').toISOString()
 };
 
-/** Credenciais iniciais. Nesta versão todos os perfis têm exatamente as mesmas permissões. */
+/** Credenciais iniciais. Nesta versão todos os perfis têm as mesmas permissões. */
 const CREDENCIAIS: Record<string, string> = { 'erick.jesus': 'qualidade' };
-
-export function listarUsuarios(): Usuario[] {
-  const salvos = ler<Usuario[]>(CHAVE_USUARIOS, []);
-  return salvos.some((u) => u.usuario === USUARIO_SEMENTE.usuario) ? salvos : [USUARIO_SEMENTE, ...salvos];
-}
 
 export function autenticar(usuario: string, senha: string): Usuario | null {
   const login = usuario.trim().toLowerCase();
   if (CREDENCIAIS[login] && CREDENCIAIS[login] === senha) {
-    const u = listarUsuarios().find((x) => x.usuario === login) ?? USUARIO_SEMENTE;
-    gravar(CHAVE_SESSAO, u);
-    return u;
+    gravar(CHAVE_SESSAO, USUARIO_SEMENTE);
+    return USUARIO_SEMENTE;
   }
   return null;
 }
 
-export function sessaoAtual(): Usuario | null {
-  return ler<Usuario | null>(CHAVE_SESSAO, null);
-}
+export const sessaoAtual = () => ler<Usuario | null>(CHAVE_SESSAO, null);
 
 export function encerrarSessao() {
   if (noNavegador()) window.localStorage.removeItem(CHAVE_SESSAO);
@@ -217,7 +208,7 @@ export function encerrarSessao() {
 /* ────────────────────────── formatação ────────────────────────── */
 
 export const formatarData = (iso: string) =>
-  new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 export const formatarDataHora = (iso: string) =>
   new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });

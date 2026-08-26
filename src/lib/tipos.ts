@@ -1,21 +1,21 @@
+import type { NormaId } from '@/dados/sgi';
+
 export type Resposta = 'conforme' | 'nao_conforme' | 'observacao' | 'nao_aplicavel';
 
 export type Anexo = {
   id: string;
   nome: string;
-  tipo: string;      // MIME
+  tipo: string;
   tamanho: number;
-  dataUrl?: string;  // modo local
-  url?: string;      // modo Supabase Storage
+  dataUrl?: string;
+  url?: string;
   criadoEm: string;
   sugestoesIA?: string[];
 };
 
-export type ItemChecklist = {
-  requisitoId: string;
-  etapa: number;
-  clausula: string;
-  titulo: string;
+export type Verificacao = {
+  itemId: string;
+  blocoId: string;
   resposta?: Resposta;
   comentario: string;
   evidencia: string;
@@ -24,21 +24,22 @@ export type ItemChecklist = {
 };
 
 export type PlanoAcao = {
-  oQue: string;      // What
-  porQue: string;    // Why
-  onde: string;      // Where
-  quando: string;    // When (prazo)
-  quem: string;      // Who
-  como: string;      // How
-  quanto: string;    // How much
+  oQue: string;
+  porQue: string;
+  onde: string;
+  quando: string;
+  quem: string;
+  como: string;
+  quanto: string;
   status: 'aberta' | 'em_andamento' | 'concluida' | 'atrasada';
 };
 
 export type NaoConformidade = {
   id: string;
-  requisitoId: string;
-  etapa: number;
-  clausula: string;
+  itemId: string;
+  blocoId: string;
+  /** Cláusulas do item, para que o relatório mostre a norma descumprida. */
+  chavesClausulas: string[];
   classificacao: 'maior' | 'menor' | 'observacao';
   descricao: string;
   evidenciaObjetiva: string;
@@ -50,26 +51,27 @@ export type NaoConformidade = {
 
 export type Assinatura = { papel: 'auditor' | 'auditado' | 'responsavel'; nome: string; cargo: string; dataHora: string };
 
-export type StatusAuditoria = 'rascunho' | 'em_andamento' | 'concluida';
+export type StatusAuditoria = 'em_andamento' | 'concluida';
 
 export type Auditoria = {
   id: string;
   codigo: string;
-  norma: string;
   setor: string;
-  processo: string;
+  /** Normas em escopo. O SGI audita as três ao mesmo tempo por padrão. */
+  normas: NormaId[];
   empresa: string;
   auditor: string;
   auditado: string;
   data: string;
+  /** Complementos opcionais: gerados automaticamente e editáveis depois. */
   escopo: string;
   objetivo: string;
   criterio: string;
   status: StatusAuditoria;
-  etapaAtual: number;
-  etapasConcluidas: number[];
-  etapasLiberadas: number[];      // etapas cuja explicação já foi lida
-  itens: Record<string, ItemChecklist>;
+  blocoAtual: number;
+  blocosLiberados: string[];
+  blocosConcluidos: string[];
+  verificacoes: Record<string, Verificacao>;
   naoConformidades: NaoConformidade[];
   assinaturas: Assinatura[];
   observacoesFinais: string;
@@ -85,9 +87,8 @@ export type Metricas = {
   total: number;
   emAndamento: number;
   concluidas: number;
-  pendentes: number;
   totalNC: number;
   taxaConformidade: number;
   tempoMedioMin: number;
-  itensRespondidos: number;
+  verificacoesFeitas: number;
 };

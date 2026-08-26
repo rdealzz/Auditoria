@@ -28,38 +28,55 @@ Nesta versão **todos os usuários têm exatamente as mesmas permissões**.
 > sessão fica no navegador. Para uso real, ative o Supabase Auth (abaixo) antes de expor o
 > sistema na internet.
 
-## As 10 etapas
+## Setores
 
-| # | Etapa | O que ensina |
+| Produção | Apoio | Gestão |
 |---|---|---|
-| 1 | Preparação | Escopo, critério, plano, imparcialidade e reunião de abertura |
-| 2 | Documentação | Procedimentos, revisão vigente, ponto de uso e obsoletos |
-| 3 | Infraestrutura | Organização, identificação, layout, ambiente e segurança |
-| 4 | Equipamentos | Calibração, rastreabilidade metrológica e manutenção |
-| 5 | Competência | Matriz, treinamento, eficácia, entrevista e conscientização |
-| 6 | Execução do Processo | Seguir o lote, parâmetros, rastreabilidade e liberação |
-| 7 | Registros | Preenchimento, assinatura, correções e retenção |
-| 8 | Riscos e Oportunidades | Aderência da matriz à realidade e eficácia dos controles |
-| 9 | Não Conformidades | Tratamento pela empresa e redação correta da constatação |
-| 10 | Conclusão | Indicadores, consenso, assinaturas e relatório |
+| Fabricação / Caldeiraria | Manutenção | Qualidade |
+| Solda | Recebimento | Engenharia / Projeto |
+| CNC / Usinagem | Almoxarifado | Contratos |
+| Montagem | Expedição | |
+| Pintura | SESMT / Segurança | |
+| Galvanização | | |
 
-São **51 requisitos** mapeados na ISO 9001:2015, cada um com o texto resumido da cláusula,
-uma explicação em linguagem simples, como verificar na prática e a evidência típica.
+**234 verificações** no catálogo, entre 14 e 24 por setor. Cada roteiro combina os blocos
+técnicos da área com o núcleo comum do SGI (documentação, competência, aspectos ambientais,
+perigos e riscos, medição e tratamento de não conformidades).
+
+Exemplo do que a auditoria de **Solda** orienta a verificar, e não apenas a perguntar:
+
+- Qualificação vigente do soldador, com faixa que cobre processo, posição, espessura e material
+- EPS/WPS disponível no posto e amparada por RQPS/PQR, com os parâmetros reais conferidos na fonte
+- Classificação AWS do consumível contra a especificada, e o lote ligado ao certificado
+- Temperatura da estufa, calibração do termômetro e tempo de exposição do eletrodo desde a retirada
+- Transferência de marcação do metal de base após o corte, até o certificado da corrida
+- Calibração da fonte para corrente e tensão, com o terra ligado diretamente na peça
+- Percentual de END executado contra o planejado, com reinspeção de todo reparo
+- Exaustão ligada e posicionada junto ao arco, com laudo de agentes químicos vigente
+- Cilindros fixados, válvula antirretrocesso e permissão de trabalho a quente
+- Segregação de pontas de eletrodo, escória e EPI contaminado, com manifesto de destinação
+
+O mesmo nível de detalhe existe para Pintura (ponto de orvalho, espessura por SSPC-PA 2,
+aderência), Galvanização (banhos, espessura por NBR 6323, efluentes, explosão por umidade),
+CNC (versão de programa, primeira peça, NR-12), Manutenção (bloqueio de energias, NR-10,
+NR-33) e as demais áreas.
 
 ## O que o sistema faz
 
 - **Painel** com auditorias em andamento, concluídas e pendentes, total de não conformidades,
   taxa de conformidade, tempo médio, últimos relatórios e últimas ações.
-- **Auditoria guiada** com barra de progresso por etapa; só avança quando a etapa está completa.
-- **Checklist inteligente**: Conforme / Não conforme / Observação / Não aplicável, comentário,
-  evidência objetiva e anexos (fotos, PDF, vídeos e documentos).
+- **Início em dois toques**: escolher o setor e confirmar. Empresa e normas vêm da última
+  auditoria; escopo, objetivo e critério são gerados e continuam editáveis.
+- **Auditoria guiada** bloco a bloco; só avança quando o bloco está completo.
+- **Cada verificação** mostra as cláusulas das três normas que atende, com Conforme / Não
+  conforme / Observação / N/A, evidência, observação e anexos (fotos, PDF, vídeos e documentos).
 - **Não conformidades** com classificação, evidência, requisito descumprido, causa raiz e
   plano de ação **5W2H**.
 - **Histórico** com filtros por empresa, setor, norma, data, auditor e status.
 - **Indicadores**: conformidade, NC por setor, NC por auditor, tempo médio, auditorias por norma
   e evolução mensal.
-- **Relatório** profissional em 9 seções (capa, sumário, dados, resultados, checklist completo,
-  NCs, planos de ação, evidências, conclusão e assinaturas), pronto para PDF via impressão.
+- **Relatório** profissional com desempenho **por norma**, roteiro verificado, NCs com plano de
+  ação, evidências, conclusão e assinaturas, pronto para PDF via impressão.
 - **Assistente** que melhora a redação de NCs, gera observações técnicas e oportunidades de
   melhoria, explica requisitos da norma, resume evidências, monta o 5W2H, escreve a conclusão
   do relatório e sugere o que verificar em cada evidência anexada.
@@ -91,16 +108,16 @@ Sem a chave, o assistente continua funcionando com o motor local determinístico
 redige NCs estruturadas, monta planos 5W2H, explica os 51 requisitos e responde às dúvidas
 mais frequentes de campo.
 
-### Fotos das etapas
+### Fotos dos blocos
 
-Cada etapa e cada setor têm uma **ilustração vetorial própria**, que é o padrão visual e nunca
+Cada bloco e cada setor têm uma **ilustração vetorial própria**, que é o padrão visual e nunca
 depende de rede. Para usar fotografias reais em vez delas:
 
 ```bash
 UNSPLASH_ACCESS_KEY=... npm run imagens   # ou PEXELS_API_KEY=...
 ```
 
-O script baixa uma foto por etapa e por setor para `public/etapas/`, grava os créditos e
+O script baixa uma foto por bloco e por setor para `public/etapas/`, grava os créditos e
 atualiza o manifesto `src/dados/imagens.ts`. As imagens ficam em cache no repositório de build,
 sem chamadas externas em tempo de execução. Se uma foto faltar ou falhar, a ilustração vetorial
 entra no lugar automaticamente.
@@ -116,8 +133,8 @@ Supabase (Postgres, Auth e Storage, opcionais) · OpenAI (opcional).
 src/
   app/            rotas: login, painel, nova auditoria, auditoria guiada, relatório,
                   histórico, indicadores e a API do assistente
-  components/     interface: navegação, cartões, gráficos, checklist, modal de NC,
-                  anexos, explicação da etapa, conclusão e assistente
+  components/     interface: navegação, gráficos, cartão de verificação, selo de norma,
+                  abertura de bloco, modal de NC, anexos, conclusão e assistente
   dados/          etapas.ts (roteiro e requisitos ISO), normas.ts (normas e setores),
                   imagens.ts (manifesto do cache de fotos)
   lib/            armazenamento, tipos, ilustrações vetoriais, cliente do assistente
