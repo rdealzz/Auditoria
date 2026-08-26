@@ -25,6 +25,23 @@
     --roxo: 111 75 255;
     --vidro: 255 255 255;
     --vidro-op: .72;
+
+    /* Paleta das ilustrações — acompanha o tema sem recarregar o SVG. */
+    --il-ceu-a: #e6eeff;      --il-ceu-b: #f6f9ff;
+    --il-parede: #e3eaf8;
+    --il-piso-a: #c2cee4;     --il-piso-b: #aab8d2;
+    --il-tinta: #2b3550;      --il-linha: #8291ae;
+    --il-aco: #aab6cc;        --il-aco-claro: #cbd4e4;
+    --il-azul: #0071e3;       --il-azul-claro: #5aa9ff;
+    --il-verde: #1d9c4b;      --il-verde-claro: #46c377;
+    --il-ambar: #ef9f24;      --il-roxo: #6f4bff;      --il-vermelho: #d92c20;
+    --il-claro: #ffffff;      --il-vidro: #bcd2f2;
+    --il-papel-a: #ffffff;    --il-papel-b: #f0f3fa;
+    --il-tela-a: #39435f;     --il-tela-b: #232b40;
+    --il-calca-a: #3d4763;    --il-calca-b: #4a5573;
+    --il-pele: #f0c9a8;       --il-pele-escura: #e8bd99;
+    --il-cabelo: #35302c;     --il-madeira: #b98a52;
+    --il-realce: #ffffff;     --il-sombreado: #000000;
   }
 
   :root[data-tema='escuro'] {
@@ -45,6 +62,23 @@
     --roxo: 157 130 255;
     --vidro: 28 28 30;
     --vidro-op: .72;
+
+    /* Ilustrações no escuro: mesma composição, valores rebaixados para não ofuscar. */
+    --il-ceu-a: #131a29;      --il-ceu-b: #1c2434;
+    --il-parede: #1a2231;
+    --il-piso-a: #232c3e;     --il-piso-b: #1a2231;
+    --il-tinta: #cfd8e8;      --il-linha: #5f6d88;
+    --il-aco: #414e68;        --il-aco-claro: #55637f;
+    --il-azul: #0a84ff;       --il-azul-claro: #5aa9ff;
+    --il-verde: #32d074;      --il-verde-claro: #5adb8f;
+    --il-ambar: #ffb340;      --il-roxo: #9d82ff;      --il-vermelho: #ff6961;
+    --il-claro: #d5dced;      --il-vidro: #2a3a54;
+    --il-papel-a: #2a3346;    --il-papel-b: #222b3c;
+    --il-tela-a: #10161f;     --il-tela-b: #0a0e15;
+    --il-calca-a: #4d5975;    --il-calca-b: #5a6784;
+    --il-pele: #d9ab86;       --il-pele-escura: #cc9e79;
+    --il-cabelo: #1d1a17;     --il-madeira: #8a6640;
+    --il-realce: #ffffff;     --il-sombreado: #000000;
   }
 
   * { border-color: rgb(var(--borda) / var(--borda-op)); }
