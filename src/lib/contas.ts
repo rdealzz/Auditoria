@@ -89,7 +89,7 @@ const idNovo = () =>
 
 /* ────────────────────────── normalização e validação ────────────────────────── */
 
-/** Usuário é sempre minúsculo, sem acento e sem espaço — `Erick Jesus` vira `erick.jesus`. */
+/** Usuário é sempre minúsculo, sem acento e sem espaço — `Ana Lima` vira `ana.lima`. */
 export function normalizarUsuario(entrada: string) {
   return entrada
     .normalize('NFD')
