@@ -68,6 +68,15 @@ export function salvarAuditoria(auditoria: Auditoria) {
   return atualizada;
 }
 
+/** Grava a lista inteira preservando `atualizadaEm` — usado pela importação. */
+export function substituirAuditorias(auditorias: Auditoria[]) {
+  if (!noNavegador()) return;
+  // Sem try/catch: a importação precisa saber quando o armazenamento encheu.
+  window.localStorage.setItem(CHAVE_AUDITORIAS, JSON.stringify(auditorias));
+  window.dispatchEvent(new CustomEvent('auditoria:alterado'));
+  if (supabaseAtivo) for (const a of auditorias) void sincronizar(a);
+}
+
 export const excluirAuditoria = (id: string) =>
   gravar(CHAVE_AUDITORIAS, ler<Auditoria[]>(CHAVE_AUDITORIAS, []).filter((a) => a.id !== id));
 

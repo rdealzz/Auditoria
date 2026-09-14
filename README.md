@@ -31,9 +31,23 @@ O sistema começa **sem nenhuma conta**. Na primeira vez que a página abre, ela
 | `/` | Entrar (usuário e senha) |
 | `/criar-conta` | Criar conta — primeira ou adicional |
 | `/redefinir-senha` | Redefinir a senha em 3 passos: usuário → pergunta de segurança → nova senha |
-| `/conta` | Dados da conta e troca de senha de quem já está dentro |
+| `/conta` | Dados da conta, troca de senha e backup das auditorias |
 
 Nesta versão **todos os usuários têm exatamente as mesmas permissões**.
+
+## Backup e transferência
+
+As auditorias ficam no `localStorage` do aparelho. Em **Minha conta → Backup e transferência**
+(atalho no Histórico, botão *Exportar / Importar*):
+
+- **Exportar** baixa um `.json` com todas as auditorias — com ou sem as fotos, o que muda bastante
+  o tamanho do arquivo. O relatório de uma auditoria também tem seu próprio botão *Exportar*, para
+  mandar só aquela.
+- **Importar** abre um arquivo desses em qualquer aparelho. Antes de gravar, mostra quantas
+  auditorias são novas e quantas já existem ali; para as repetidas você escolhe ficar com a mais
+  recente, substituir pela do arquivo, manter a do aparelho ou importar como cópia.
+
+O arquivo não contém contas nem senhas — só as auditorias.
 
 > No modo local as contas ficam no `localStorage` do próprio dispositivo — a senha e a resposta de
 > segurança são guardadas apenas como hash com sal (PBKDF2‑SHA‑256 quando o navegador oferece
@@ -150,7 +164,8 @@ src/
   dados/          etapas.ts (roteiro e requisitos ISO), normas.ts (normas e setores),
                   imagens.ts (manifesto do cache de fotos)
   lib/            armazenamento, contas (login, cadastro e redefinição), cripto (hash com sal),
-                  tipos, ilustrações vetoriais, cliente do assistente
+                  backup (exportar e importar auditorias), tipos, ilustrações vetoriais,
+                  cliente do assistente
 scripts/          baixar-imagens.mjs
 supabase/         migração do esquema
 ```

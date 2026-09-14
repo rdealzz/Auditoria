@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Navegacao from '@/components/Navegacao';
 import SeloNorma from '@/components/SeloNorma';
 import { Anel, Botao } from '@/components/ui';
-import { IconeImprimir, IconeVoltar } from '@/components/Icones';
+import { IconeDoc, IconeImprimir, IconeVoltar } from '@/components/Icones';
 import { roteiroDoSetor } from '@/dados/montagem-roteiro';
 import { setorPorId } from '@/dados/setores';
 import { clausulas, NORMAS, type NormaId } from '@/dados/sgi';
@@ -15,6 +15,7 @@ import {
   contarPorResposta, formatarData, formatarDataHora, formatarDuracao,
   obterAuditoria, progressoGeral, taxaConformidade
 } from '@/lib/armazenamento';
+import { baixar, montarPacote, nomeDoArquivo } from '@/lib/backup';
 import { useApp } from '@/app/provedores';
 
 const ROTULOS: Record<string, string> = {
@@ -80,9 +81,20 @@ export default function Relatorio() {
           <Link href={`/auditorias/${auditoria.id}`} className="inline-flex items-center gap-1.5 text-[13px] text-texto3 transition-colors hover:text-texto">
             <IconeVoltar tamanho={15} />Voltar à auditoria
           </Link>
-          <Botao variante="primario" onClick={() => window.print()}>
-            <IconeImprimir tamanho={16} />Gerar PDF
-          </Botao>
+          <div className="flex gap-2">
+            <Botao
+              variante="suave"
+              onClick={() => {
+                // Exporta só esta auditoria, para levar a outro aparelho.
+                baixar(montarPacote([auditoria], { incluirAnexos: true, incluirPreferencias: false }), nomeDoArquivo([auditoria]));
+              }}
+            >
+              <IconeDoc tamanho={16} />Exportar
+            </Botao>
+            <Botao variante="primario" onClick={() => window.print()}>
+              <IconeImprimir tamanho={16} />Gerar PDF
+            </Botao>
+          </div>
         </div>
 
         <article className="rounded-xl2 border bg-superficie p-9 shadow-nivel1 sm:p-12">

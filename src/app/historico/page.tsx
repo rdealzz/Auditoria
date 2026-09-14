@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import Navegacao from '@/components/Navegacao';
 import { Botao, Vazio } from '@/components/ui';
-import { IconeLupa, IconeMais } from '@/components/Icones';
+import { IconeDoc, IconeLupa, IconeMais } from '@/components/Icones';
 import { SETORES } from '@/dados/setores';
 import { NORMAS, type NormaId } from '@/dados/sgi';
 import type { Auditoria } from '@/lib/tipos';
@@ -70,7 +70,10 @@ export default function Historico() {
               {filtradas.length} de {auditorias.length} auditorias
             </p>
           </div>
-          <Link href="/auditorias/nova"><Botao variante="primario"><IconeMais tamanho={16} />Nova</Botao></Link>
+          <div className="flex gap-2">
+            <Link href="/conta#backup"><Botao variante="contorno"><IconeDoc tamanho={16} />Exportar / Importar</Botao></Link>
+            <Link href="/auditorias/nova"><Botao variante="primario"><IconeMais tamanho={16} />Nova</Botao></Link>
+          </div>
         </motion.header>
 
         <div className="mb-8">

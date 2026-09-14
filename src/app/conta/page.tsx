@@ -6,6 +6,7 @@ import Navegacao from '@/components/Navegacao';
 import { Botao, Cartao } from '@/components/ui';
 import CampoSenha from '@/components/CampoSenha';
 import { Aviso } from '@/components/MolduraAcesso';
+import PainelBackup from '@/components/PainelBackup';
 import { alterarSenha } from '@/lib/contas';
 import { formatarData } from '@/lib/armazenamento';
 
@@ -36,7 +37,7 @@ export default function MinhaConta() {
       <Navegacao />
       <main className="mx-auto w-full max-w-[640px] px-5 py-8 sm:px-6">
         <h1 className="text-[27px] font-semibold tracking-[-.02em] text-texto">Minha conta</h1>
-        <p className="mt-1 text-[13.5px] text-texto3">Dados de acesso deste dispositivo.</p>
+        <p className="mt-1 text-[13.5px] text-texto3">Dados de acesso e backup deste aparelho.</p>
 
         <Cartao className="mt-6" animar>
           <dl className="grid gap-3 sm:grid-cols-2">
@@ -71,6 +72,15 @@ export default function MinhaConta() {
             </Botao>
           </form>
         </Cartao>
+
+        <h2 id="backup" className="mt-10 scroll-mt-20 text-[21px] font-semibold tracking-[-.02em] text-texto">
+          Backup e transferência
+        </h2>
+        <p className="mb-4 mt-1 text-[13.5px] leading-snug text-texto3">
+          As auditorias ficam guardadas apenas neste aparelho. Exporte de tempos em tempos —
+          é a única cópia que sobrevive à limpeza dos dados do navegador.
+        </p>
+        <PainelBackup />
       </main>
     </>
   );

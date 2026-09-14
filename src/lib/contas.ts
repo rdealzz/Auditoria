@@ -194,6 +194,7 @@ export async function criarConta(dados: DadosNovaConta): Promise<Resultado<Usuar
   };
 
   gravarContas([...contas, conta]);
+  abrirSessao(conta); // quem acabou de criar a conta já entra — e continua dentro ao recarregar
   return bom(publica(conta));
 }
 
