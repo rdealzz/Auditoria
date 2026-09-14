@@ -55,13 +55,17 @@ export default function Navegacao() {
         {tema === 'claro' ? <IconeLua tamanho={17} /> : <IconeSol tamanho={17} />}
       </button>
 
-      <div className="flex items-center gap-2 rounded-pill border py-1 pl-1 pr-1 sm:pr-3">
+      <Link
+        href="/conta"
+        title="Minha conta"
+        className="flex items-center gap-2 rounded-pill border py-1 pl-1 pr-1 transition-colors duration-200 hover:bg-texto/[.05] sm:pr-3"
+      >
         <Avatar nome={usuario.nome} tamanho={26} />
         <div className="hidden leading-tight sm:block">
           <p className="text-[12.5px] font-medium text-texto">{usuario.nome}</p>
           <p className="text-[10.5px] uppercase tracking-wide text-texto3">Administrador</p>
         </div>
-      </div>
+      </Link>
 
       <button
         onClick={sair}

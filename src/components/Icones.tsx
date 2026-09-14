@@ -33,6 +33,12 @@ export const IconeAlerta = ({ tamanho = 20, className = '', strokeWidth = 1.8 }:
 export const IconeOlho = ({ tamanho = 20, className = '', strokeWidth = 1.7 }: Props) => (
   <svg {...base(tamanho, strokeWidth, className)}><path d="M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg>
 );
+export const IconeOlhoFechado = ({ tamanho = 20, className = '', strokeWidth = 1.7 }: Props) => (
+  <svg {...base(tamanho, strokeWidth, className)}><path d="M3 3l18 18"/><path d="M10.6 5.7A9.8 9.8 0 0 1 12 5.5c6.2 0 10 6.5 10 6.5a18 18 0 0 1-3.2 4"/><path d="M6.3 7.9A17.6 17.6 0 0 0 2 12s3.8 6.5 10 6.5a10 10 0 0 0 4.2-.9"/><path d="M9.9 9.9a2.8 2.8 0 0 0 3.9 3.9"/></svg>
+);
+export const IconeChave = ({ tamanho = 20, className = '', strokeWidth = 1.7 }: Props) => (
+  <svg {...base(tamanho, strokeWidth, className)}><circle cx="8" cy="15" r="4"/><path d="M10.9 12.1L20 3"/><path d="M17 6l2.5 2.5"/><path d="M14.5 8.5L17 11"/></svg>
+);
 export const IconeMenos = ({ tamanho = 20, className = '', strokeWidth = 2 }: Props) => (
   <svg {...base(tamanho, strokeWidth, className)}><path d="M6 12h12"/></svg>
 );

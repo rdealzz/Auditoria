@@ -2,14 +2,19 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { Usuario } from '@/lib/tipos';
-import { autenticar, encerrarSessao, sessaoAtual } from '@/lib/armazenamento';
+import { autenticar, encerrarSessao, existeAlgumaConta, sessaoAtual } from '@/lib/contas';
 
 type Tema = 'claro' | 'escuro';
 
 type Contexto = {
   usuario: Usuario | null;
   carregando: boolean;
-  entrar: (usuario: string, senha: string) => Usuario | null;
+  /** Há pelo menos uma conta criada? Se não, a porta de entrada é o cadastro. */
+  temConta: boolean;
+  entrar: (usuario: string, senha: string) => Promise<string | null>;
+  /** Registra a sessão após criar conta ou redefinir senha, sem repetir o login. */
+  definirUsuario: (usuario: Usuario) => void;
+  revisarContas: () => void;
   sair: () => void;
   tema: Tema;
   alternarTema: () => void;
@@ -26,12 +31,14 @@ export const useApp = () => {
 
 export default function Provedores({ children }: { children: React.ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [temConta, setTemConta] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [tema, setTema] = useState<Tema>('claro');
   const [avisos, setAvisos] = useState<{ id: number; texto: string }[]>([]);
 
   useEffect(() => {
     setUsuario(sessaoAtual());
+    setTemConta(existeAlgumaConta());
     const salvo = (localStorage.getItem('auditoria.tema') as Tema | null)
       ?? (matchMedia('(prefers-color-scheme: dark)').matches ? 'escuro' : 'claro');
     setTema(salvo);
@@ -39,15 +46,26 @@ export default function Provedores({ children }: { children: React.ReactNode }) 
     setCarregando(false);
   }, []);
 
-  const entrar = useCallback((login: string, senha: string) => {
-    const u = autenticar(login, senha);
-    if (u) setUsuario(u);
-    return u;
+  /** Devolve a mensagem de erro, ou `null` quando a entrada foi aceita. */
+  const entrar = useCallback(async (login: string, senha: string) => {
+    const r = await autenticar(login, senha);
+    if (!r.ok) return r.erro;
+    setUsuario(r.valor);
+    setTemConta(true);
+    return null;
   }, []);
+
+  const definirUsuario = useCallback((u: Usuario) => {
+    setUsuario(u);
+    setTemConta(true);
+  }, []);
+
+  const revisarContas = useCallback(() => setTemConta(existeAlgumaConta()), []);
 
   const sair = useCallback(() => {
     encerrarSessao();
     setUsuario(null);
+    setTemConta(existeAlgumaConta());
   }, []);
 
   const alternarTema = useCallback(() => {
@@ -66,8 +84,8 @@ export default function Provedores({ children }: { children: React.ReactNode }) 
   }, []);
 
   const valor = useMemo(
-    () => ({ usuario, carregando, entrar, sair, tema, alternarTema, avisar }),
-    [usuario, carregando, entrar, sair, tema, alternarTema, avisar]
+    () => ({ usuario, carregando, temConta, entrar, definirUsuario, revisarContas, sair, tema, alternarTema, avisar }),
+    [usuario, carregando, temConta, entrar, definirUsuario, revisarContas, sair, tema, alternarTema, avisar]
   );
 
   return (

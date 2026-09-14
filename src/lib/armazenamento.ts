@@ -1,6 +1,6 @@
 'use client';
 
-import type { Auditoria, Metricas, Usuario, Verificacao } from './tipos';
+import type { Auditoria, Metricas, Verificacao } from './tipos';
 import { roteiroDoSetor } from '@/dados/montagem-roteiro';
 import { setorPorId } from '@/dados/setores';
 import { totalItens } from '@/dados/roteiro';
@@ -8,7 +8,6 @@ import { NORMAS, type NormaId } from '@/dados/sgi';
 import { obterSupabase, supabaseAtivo } from './supabase';
 
 const CHAVE_AUDITORIAS = 'auditoria.auditorias.v2';
-const CHAVE_SESSAO = 'auditoria.sessao.v1';
 const CHAVE_PREFERENCIAS = 'auditoria.preferencias.v1';
 
 /* ────────────────────────── util ────────────────────────── */
@@ -179,31 +178,14 @@ export function calcularMetricas(auditorias: Auditoria[]): Metricas {
 
 /* ────────────────────────── usuários e sessão ────────────────────────── */
 
-const USUARIO_SEMENTE: Usuario = {
-  id: 'u-erick',
-  usuario: 'erick.jesus',
-  nome: 'Erick Jesus',
-  perfil: 'administrador',
-  criadoEm: new Date('2026-01-01').toISOString()
-};
-
-/** Credenciais iniciais. Nesta versão todos os perfis têm as mesmas permissões. */
-const CREDENCIAIS: Record<string, string> = { 'erick.jesus': 'qualidade' };
-
-export function autenticar(usuario: string, senha: string): Usuario | null {
-  const login = usuario.trim().toLowerCase();
-  if (CREDENCIAIS[login] && CREDENCIAIS[login] === senha) {
-    gravar(CHAVE_SESSAO, USUARIO_SEMENTE);
-    return USUARIO_SEMENTE;
-  }
-  return null;
-}
-
-export const sessaoAtual = () => ler<Usuario | null>(CHAVE_SESSAO, null);
-
-export function encerrarSessao() {
-  if (noNavegador()) window.localStorage.removeItem(CHAVE_SESSAO);
-}
+/**
+ * As contas vivem em `lib/contas`: não há mais usuário nem senha embutidos no
+ * código. Re‑exportamos aqui para quem já importava deste módulo.
+ */
+export {
+  autenticar, criarConta, encerrarSessao, existeAlgumaConta, listarUsuarios,
+  perguntaDe, redefinirSenha, alterarSenha, sessaoAtual
+} from './contas';
 
 /* ────────────────────────── formatação ────────────────────────── */
 

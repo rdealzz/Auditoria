@@ -16,17 +16,29 @@ npm install
 npm run dev          # http://localhost:3000
 ```
 
-Acesso inicial:
+## Acesso
 
-| Usuário | Senha | Perfil |
-|---|---|---|
-| `erick.jesus` | `qualidade` | Administrador |
+O sistema começa **sem nenhuma conta**. Na primeira vez que a página abre, ela leva direto para
+`/criar-conta`, onde você define:
+
+- **usuário** (não é e‑mail — só letras, números, ponto, hífen e sublinhado; sugerido a partir do nome);
+- **senha** e **confirmar senha**, com o olhinho para conferir o que foi digitado e indicador de força
+  (mínimo de 8 caracteres, com pelo menos uma letra e um número);
+- uma **pergunta de segurança**, usada para redefinir a senha.
+
+| Rota | Para que serve |
+|---|---|
+| `/` | Entrar (usuário e senha) |
+| `/criar-conta` | Criar conta — primeira ou adicional |
+| `/redefinir-senha` | Redefinir a senha em 3 passos: usuário → pergunta de segurança → nova senha |
+| `/conta` | Dados da conta e troca de senha de quem já está dentro |
 
 Nesta versão **todos os usuários têm exatamente as mesmas permissões**.
 
-> A autenticação embutida é de demonstração: as credenciais estão no código do cliente e a
-> sessão fica no navegador. Para uso real, ative o Supabase Auth (abaixo) antes de expor o
-> sistema na internet.
+> No modo local as contas ficam no `localStorage` do próprio dispositivo — a senha e a resposta de
+> segurança são guardadas apenas como hash com sal (PBKDF2‑SHA‑256 quando o navegador oferece
+> WebCrypto). Cada dispositivo tem as suas contas. Para uso em rede, com contas compartilhadas e
+> recuperação por e‑mail, ative o Supabase Auth (abaixo) antes de expor o sistema na internet.
 
 ## Setores
 
@@ -131,13 +143,14 @@ Supabase (Postgres, Auth e Storage, opcionais) · OpenAI (opcional).
 
 ```
 src/
-  app/            rotas: login, painel, nova auditoria, auditoria guiada, relatório,
-                  histórico, indicadores e a API do assistente
+  app/            rotas: entrar, criar conta, redefinir senha, conta, painel, nova auditoria,
+                  auditoria guiada, relatório, histórico, indicadores e a API do assistente
   components/     interface: navegação, gráficos, cartão de verificação, selo de norma,
                   abertura de bloco, modal de NC, anexos, conclusão e assistente
   dados/          etapas.ts (roteiro e requisitos ISO), normas.ts (normas e setores),
                   imagens.ts (manifesto do cache de fotos)
-  lib/            armazenamento, tipos, ilustrações vetoriais, cliente do assistente
+  lib/            armazenamento, contas (login, cadastro e redefinição), cripto (hash com sal),
+                  tipos, ilustrações vetoriais, cliente do assistente
 scripts/          baixar-imagens.mjs
 supabase/         migração do esquema
 ```
