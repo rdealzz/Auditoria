@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { Anexo } from '@/lib/tipos';
-import { idNovo } from '@/lib/armazenamento';
+import { EVENTO_SEM_ESPACO, idNovo } from '@/lib/armazenamento';
 import { perguntarIA } from '@/lib/assistente';
 import { Botao, Etiqueta } from './ui';
 import { IconeCamera, IconeDoc, IconeFaisca, IconeLixeira } from './Icones';
@@ -83,9 +83,31 @@ export default function Anexos({ anexos, aoMudar, contexto }: Props) {
       novos.push(anexo);
     }
 
-    aoMudar([...anexos, ...novos]);
+    // Se o aparelho não tiver espaço, a evidência não pode ficar na tela como
+    // se tivesse sido guardada — desfazemos e dizemos o que aconteceu.
+    const guardou = await aplicar([...anexos, ...novos]);
+    if (!guardou) {
+      aoMudar(anexos);
+      setErro(
+        novos.length === 1
+          ? 'Sem espaço neste aparelho: a foto não foi guardada. Exporte as auditorias em Minha conta e apague as antigas.'
+          : 'Sem espaço neste aparelho: as fotos não foram guardadas. Exporte as auditorias em Minha conta e apague as antigas.'
+      );
+    }
+
     setOcupado(false);
     if (entrada.current) entrada.current.value = '';
+  }
+
+  /** Aplica a mudança e observa se a gravação no aparelho deu certo. */
+  async function aplicar(lista: Anexo[]) {
+    let falhou = false;
+    const marcar = () => { falhou = true; };
+    window.addEventListener(EVENTO_SEM_ESPACO, marcar);
+    aoMudar(lista);
+    await new Promise((r) => setTimeout(r, 150)); // tempo do salvamento acontecer
+    window.removeEventListener(EVENTO_SEM_ESPACO, marcar);
+    return !falhou;
   }
 
   return (

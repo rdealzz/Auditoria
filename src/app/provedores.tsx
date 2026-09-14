@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { Usuario } from '@/lib/tipos';
 import { autenticar, encerrarSessao, existeAlgumaConta, sessaoAtual } from '@/lib/contas';
+import { EVENTO_SEM_ESPACO } from '@/lib/armazenamento';
 
 type Tema = 'claro' | 'escuro';
 
@@ -82,6 +83,14 @@ export default function Provedores({ children }: { children: React.ReactNode }) 
     setAvisos((a) => [...a, { id, texto }]);
     setTimeout(() => setAvisos((a) => a.filter((x) => x.id !== id)), 3200);
   }, []);
+
+  // Rede de segurança: nenhuma alteração pode falhar sem a pessoa ficar sabendo.
+  useEffect(() => {
+    const semEspaco = () =>
+      avisar('Sem espaço neste aparelho — a última alteração não foi salva. Exporte as auditorias em Minha conta e apague as antigas.');
+    window.addEventListener(EVENTO_SEM_ESPACO, semEspaco);
+    return () => window.removeEventListener(EVENTO_SEM_ESPACO, semEspaco);
+  }, [avisar]);
 
   const valor = useMemo(
     () => ({ usuario, carregando, temConta, entrar, definirUsuario, revisarContas, sair, tema, alternarTema, avisar }),

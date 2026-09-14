@@ -49,6 +49,20 @@ As auditorias ficam no `localStorage` do aparelho. Em **Minha conta → Backup e
 
 O arquivo não contém contas nem senhas — só as auditorias.
 
+### Quanto cabe no aparelho
+
+Medido no Chromium com fotos de 12 MP (4032×3024):
+
+| | |
+|---|---|
+| Espaço do `localStorage` | ~9,9 MB por aparelho |
+| Uma foto de 4,8 MB depois da compressão do app (1600 px, JPEG 0.72, embutida em base64) | ~480 KB |
+| Fotos que cabem no total | ~20 |
+
+Quando o espaço acaba, a foto **não** é aceita em silêncio: o anexo é desfeito e a tela avisa para
+exportar e apagar as auditorias antigas. O mesmo vale para a importação, que não grava nada pela
+metade. Exportar sem as fotos é o caminho para manter o histórico com o aparelho quase cheio.
+
 > No modo local as contas ficam no `localStorage` do próprio dispositivo — a senha e a resposta de
 > segurança são guardadas apenas como hash com sal (PBKDF2‑SHA‑256 quando o navegador oferece
 > WebCrypto). Cada dispositivo tem as suas contas. Para uso em rede, com contas compartilhadas e

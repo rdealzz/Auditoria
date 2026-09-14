@@ -27,13 +27,20 @@ function ler<T>(chave: string, padrao: T): T {
   }
 }
 
+/** Avisa a interface de que o aparelho não tem mais espaço (ver `provedores`). */
+export const EVENTO_SEM_ESPACO = 'auditoria:sem-espaco';
+
 function gravar(chave: string, valor: unknown) {
-  if (!noNavegador()) return;
+  if (!noNavegador()) return false;
   try {
     window.localStorage.setItem(chave, JSON.stringify(valor));
     window.dispatchEvent(new CustomEvent('auditoria:alterado'));
+    return true;
   } catch (e) {
+    // Silenciar aqui significaria perder a evidência sem ninguém perceber.
     console.warn('Não foi possível gravar localmente.', e);
+    window.dispatchEvent(new CustomEvent(EVENTO_SEM_ESPACO));
+    return false;
   }
 }
 
@@ -71,8 +78,13 @@ export function salvarAuditoria(auditoria: Auditoria) {
 /** Grava a lista inteira preservando `atualizadaEm` — usado pela importação. */
 export function substituirAuditorias(auditorias: Auditoria[]) {
   if (!noNavegador()) return;
-  // Sem try/catch: a importação precisa saber quando o armazenamento encheu.
-  window.localStorage.setItem(CHAVE_AUDITORIAS, JSON.stringify(auditorias));
+  try {
+    window.localStorage.setItem(CHAVE_AUDITORIAS, JSON.stringify(auditorias));
+  } catch (e) {
+    // A importação mostra a própria mensagem; o erro sobe para ela decidir.
+    window.dispatchEvent(new CustomEvent(EVENTO_SEM_ESPACO));
+    throw e;
+  }
   window.dispatchEvent(new CustomEvent('auditoria:alterado'));
   if (supabaseAtivo) for (const a of auditorias) void sincronizar(a);
 }
