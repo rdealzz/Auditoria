@@ -11,7 +11,7 @@
  * O arquivo NÃO contém contas nem senhas: só as auditorias.
  */
 
-import type { Anexo, Auditoria, NaoConformidade, Verificacao } from './tipos';
+import type { Anexo, Assinatura, Auditoria, NaoConformidade, PlanoAcao, Verificacao } from './tipos';
 import { NORMAS, type NormaId } from '@/dados/sgi';
 import { idNovo, lerPreferencias, listarAuditorias, substituirAuditorias, gravarPreferencias } from './armazenamento';
 
@@ -106,6 +106,56 @@ function sanearAnexo(bruto: Record<string, unknown>): Anexo {
   };
 }
 
+const CLASSIFICACOES = ['maior', 'menor', 'observacao'] as const;
+const PAPEIS = ['auditor', 'auditado', 'responsavel'] as const;
+const STATUS_PLANO = ['aberta', 'em_andamento', 'concluida', 'atrasada'] as const;
+
+const umDe = <T extends string>(valores: readonly T[], v: unknown, padrao: T): T =>
+  valores.includes(v as T) ? (v as T) : padrao;
+
+function sanearPlano(bruto: unknown): PlanoAcao | undefined {
+  if (!bruto || typeof bruto !== 'object') return undefined;
+  const b = bruto as Record<string, unknown>;
+  return {
+    oQue: texto(b.oQue), porQue: texto(b.porQue), onde: texto(b.onde), quando: texto(b.quando),
+    quem: texto(b.quem), como: texto(b.como), quanto: texto(b.quanto),
+    status: umDe(STATUS_PLANO, b.status, 'aberta')
+  };
+}
+
+/**
+ * Uma NC sem `chavesClausulas` derrubava o relatório inteiro (`clausulas()` chama
+ * `.map` direto). Tudo o que vem do arquivo passa por aqui antes de ser gravado.
+ */
+function sanearNC(bruto: unknown): NaoConformidade | null {
+  if (!bruto || typeof bruto !== 'object') return null;
+  const b = bruto as Record<string, unknown>;
+  return {
+    id: texto(b.id) || idNovo(),
+    itemId: texto(b.itemId),
+    blocoId: texto(b.blocoId),
+    chavesClausulas: lista<unknown>(b.chavesClausulas).filter((c): c is string => typeof c === 'string'),
+    classificacao: umDe(CLASSIFICACOES, b.classificacao, 'menor'),
+    descricao: texto(b.descricao),
+    evidenciaObjetiva: texto(b.evidenciaObjetiva),
+    requisitoDescumprido: texto(b.requisitoDescumprido),
+    causaRaiz: typeof b.causaRaiz === 'string' ? b.causaRaiz : undefined,
+    plano: sanearPlano(b.plano),
+    criadaEm: texto(b.criadaEm) || new Date().toISOString()
+  };
+}
+
+function sanearAssinatura(bruto: unknown): Assinatura | null {
+  if (!bruto || typeof bruto !== 'object') return null;
+  const b = bruto as Record<string, unknown>;
+  return {
+    papel: umDe(PAPEIS, b.papel, 'auditor'),
+    nome: texto(b.nome),
+    cargo: texto(b.cargo),
+    dataHora: texto(b.dataHora) || new Date().toISOString()
+  };
+}
+
 /** Aceita o que veio do arquivo, completando o que faltar — um JSON antigo não pode quebrar a tela. */
 function sanearAuditoria(bruto: unknown): Auditoria | null {
   if (!bruto || typeof bruto !== 'object') return null;
@@ -151,8 +201,8 @@ function sanearAuditoria(bruto: unknown): Auditoria | null {
     blocosLiberados: lista<string>(b.blocosLiberados),
     blocosConcluidos: lista<string>(b.blocosConcluidos),
     verificacoes,
-    naoConformidades: lista<NaoConformidade>(b.naoConformidades),
-    assinaturas: lista<Auditoria['assinaturas'][number]>(b.assinaturas),
+    naoConformidades: lista<unknown>(b.naoConformidades).map(sanearNC).filter((n): n is NaoConformidade => n !== null),
+    assinaturas: lista<unknown>(b.assinaturas).map(sanearAssinatura).filter((a): a is Assinatura => a !== null),
     observacoesFinais: texto(b.observacoesFinais),
     criadaEm: texto(b.criadaEm) || agora,
     atualizadaEm: texto(b.atualizadaEm) || texto(b.criadaEm) || agora,

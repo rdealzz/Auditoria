@@ -51,7 +51,9 @@ export default function PaginaAuditoria() {
 
   const blocos = useMemo(() => (auditoria ? roteiroDoSetor(auditoria.setor) : []), [auditoria?.setor]);
   const setor = auditoria ? setorPorId(auditoria.setor) : undefined;
-  const bloco = blocos[auditoria?.blocoAtual ?? 0];
+  // Uma auditoria importada pode apontar para um bloco que não existe neste roteiro.
+  const indiceBloco = Math.min(Math.max(0, auditoria?.blocoAtual ?? 0), Math.max(0, blocos.length - 1));
+  const bloco = blocos[indiceBloco];
 
   const contexto = useMemo(
     () => auditoria && {
@@ -75,13 +77,34 @@ export default function PaginaAuditoria() {
     );
   }
 
-  if (!usuario || !auditoria || !bloco || !contexto) return <Navegacao />;
+  if (!usuario || !auditoria || !contexto) return <Navegacao />;
+
+  // Setor sem roteiro (por exemplo, auditoria importada de uma versão com outros
+  // setores): o relatório ainda abre, então é para lá que mandamos.
+  if (!bloco) {
+    return (
+      <>
+        <Navegacao />
+        <main className="mx-auto max-w-conteudo px-6 py-24 text-center">
+          <h1 className="text-[26px] font-semibold">Roteiro indisponível</h1>
+          <p className="mx-auto mt-2 max-w-md text-[15px] text-texto3">
+            Esta auditoria é do setor <strong className="text-texto2">{auditoria.setor}</strong>, que não existe
+            nesta versão do sistema. Os dados continuam guardados e o relatório pode ser aberto normalmente.
+          </p>
+          <div className="mt-7 flex justify-center gap-2">
+            <Link href={`/auditorias/${auditoria.id}/relatorio`}><Botao variante="primario">Ver o relatório</Botao></Link>
+            <Link href="/historico"><Botao variante="suave">Voltar ao histórico</Botao></Link>
+          </div>
+        </main>
+      </>
+    );
+  }
 
   const emAbertura = !auditoria.blocosLiberados.includes(bloco.id);
   const prog = progressoBloco(auditoria, bloco.id);
   const geral = progressoGeral(auditoria);
   const completo = prog.respondidos === prog.total;
-  const ultimo = auditoria.blocoAtual === blocos.length - 1;
+  const ultimo = indiceBloco === blocos.length - 1;
 
   /* ───────── ações ───────── */
 
@@ -105,7 +128,7 @@ export default function PaginaAuditoria() {
     const concluidos = auditoria!.blocosConcluidos.includes(bloco.id)
       ? auditoria!.blocosConcluidos
       : [...auditoria!.blocosConcluidos, bloco.id];
-    atualizar({ blocosConcluidos: concluidos, blocoAtual: Math.min(blocos.length - 1, auditoria!.blocoAtual + 1) });
+    atualizar({ blocosConcluidos: concluidos, blocoAtual: Math.min(blocos.length - 1, indiceBloco + 1) });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -163,7 +186,7 @@ export default function PaginaAuditoria() {
           <div className="flex gap-1">
             {blocos.map((b, i) => {
               const feito = auditoria.blocosConcluidos.includes(b.id);
-              const atual = i === auditoria.blocoAtual;
+              const atual = i === indiceBloco;
               const acessivel = feito || i <= auditoria.blocosConcluidos.length;
               return (
                 <button
@@ -192,7 +215,7 @@ export default function PaginaAuditoria() {
             >
               <AberturaBloco
                 bloco={bloco}
-                numero={auditoria.blocoAtual + 1}
+                numero={indiceBloco + 1}
                 total={blocos.length}
                 aoIniciar={liberar}
               />
@@ -206,7 +229,7 @@ export default function PaginaAuditoria() {
             >
               <header className="mb-8">
                 <p className="text-[12.5px] font-medium tabular-nums tracking-wide text-texto3">
-                  Bloco {auditoria.blocoAtual + 1} de {blocos.length}
+                  Bloco {indiceBloco + 1} de {blocos.length}
                   <span className="mx-2 opacity-40">·</span>
                   {prog.respondidos} de {prog.total} verificadas
                 </p>
@@ -245,7 +268,7 @@ export default function PaginaAuditoria() {
       {!emAbertura && (
         <div className="fixed inset-x-0 bottom-0 z-40 px-4 pb-5 nao-imprimir">
           <div className="vidro mx-auto flex w-full max-w-[560px] items-center gap-3 rounded-pill border px-4 py-2.5 shadow-nivel2">
-            <Botao variante="suave" tamanho="p" onClick={() => irPara(auditoria.blocoAtual - 1)} disabled={auditoria.blocoAtual === 0}>
+            <Botao variante="suave" tamanho="p" onClick={() => irPara(indiceBloco - 1)} disabled={indiceBloco === 0}>
               <IconeVoltar tamanho={15} />
             </Botao>
             <p className="min-w-0 flex-1 truncate text-center text-[12.5px] text-texto3">

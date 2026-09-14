@@ -270,7 +270,9 @@ export async function redefinirSenha(
 
   conta.senha = await guardarSegredo(senha.valor);
   gravarContas(contas);
-  encerrarSessao(); // a pessoa entra de novo com a senha nova
+  // Só derruba a sessão se for a própria conta: quem está usando o aparelho
+  // não pode ser deslogado porque alguém redefiniu OUTRA senha.
+  if (sessaoAtual()?.id === conta.id) encerrarSessao();
   return bom(publica(conta));
 }
 
@@ -284,6 +286,7 @@ export async function alterarSenha(
   const contas = lerContas();
   const conta = contas.find((c) => c.usuario === normalizarUsuario(entrada));
   if (!conta || !(await conferirSegredo(senhaAtual, conta.senha))) return ruim('A senha atual não confere.');
+  if (senha.valor === senhaAtual) return ruim('A nova senha precisa ser diferente da senha atual.');
 
   conta.senha = await guardarSegredo(senha.valor);
   gravarContas(contas);
