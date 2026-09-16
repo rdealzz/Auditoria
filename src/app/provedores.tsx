@@ -87,7 +87,7 @@ export default function Provedores({ children }: { children: React.ReactNode }) 
   // Rede de segurança: nenhuma alteração pode falhar sem a pessoa ficar sabendo.
   useEffect(() => {
     const semEspaco = () =>
-      avisar('Sem espaço neste aparelho — a última alteração não foi salva. Exporte as auditorias em Minha conta e apague as antigas.');
+      avisar('Sem espaço neste aparelho — a última alteração não foi salva. Exporte as auditorias em Minha conta e apague as antigas no Histórico.');
     window.addEventListener(EVENTO_SEM_ESPACO, semEspaco);
     return () => window.removeEventListener(EVENTO_SEM_ESPACO, semEspaco);
   }, [avisar]);

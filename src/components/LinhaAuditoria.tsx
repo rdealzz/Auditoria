@@ -1,18 +1,22 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { setorPorId } from '@/dados/setores';
 import { NORMAS } from '@/dados/sgi';
 import type { Auditoria } from '@/lib/tipos';
 import { formatarData, progressoGeral, taxaConformidade } from '@/lib/armazenamento';
 import { Barra } from './ui';
-import { IconeSeta } from './Icones';
+import { IconeLixeira, IconeSeta, IconeX } from './Icones';
 
 const PONTO = { iso9001: 'bg-acento', iso14001: 'bg-verde', iso45001: 'bg-ambar' } as const;
 
 /** Uma auditoria em uma linha: setor, normas cobertas, progresso e resultado. */
-export default function LinhaAuditoria({ auditoria, indice }: { auditoria: Auditoria; indice: number }) {
+export default function LinhaAuditoria({
+  auditoria, indice, aoExcluir
+}: { auditoria: Auditoria; indice: number; aoExcluir?: () => void }) {
+  const [confirmando, setConfirmando] = useState(false);
   const p = progressoGeral(auditoria);
   const setor = setorPorId(auditoria.setor);
   const concluida = auditoria.status === 'concluida';
@@ -22,10 +26,11 @@ export default function LinhaAuditoria({ auditoria, indice }: { auditoria: Audit
     <motion.li
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: Math.min(indice * 0.05, 0.3), ease: [0.32, 0.72, 0, 1] }}
+      className="flex items-center gap-2"
     >
       <Link
         href={destino}
-        className="group flex items-center gap-5 rounded-xl2 border bg-superficie px-6 py-5
+        className="group flex min-w-0 flex-1 items-center gap-5 rounded-xl2 border bg-superficie px-6 py-5
                    transition-all duration-300 ease-apple hover:-translate-y-0.5 hover:shadow-nivel1"
       >
         <div className="min-w-0 flex-1">
@@ -58,6 +63,40 @@ export default function LinhaAuditoria({ auditoria, indice }: { auditoria: Audit
 
         <IconeSeta tamanho={17} className="shrink-0 text-texto3 transition-transform duration-300 group-hover:translate-x-1" />
       </Link>
+
+      {/* Fora do link, senão excluir viraria navegação. Confirma em dois toques. */}
+      {aoExcluir && (
+        <div className="flex shrink-0 items-center gap-1.5">
+          {confirmando ? (
+            <>
+              <span className="rounded-pill bg-superficie/95 px-2 text-[12px] text-texto3 backdrop-blur">Excluir?</span>
+              <button
+                onClick={() => { setConfirmando(false); aoExcluir(); }}
+                className="rounded-pill bg-vermelho px-3 py-1 text-[12.5px] font-medium text-white transition-opacity hover:opacity-85"
+              >
+                Sim
+              </button>
+              <button
+                onClick={() => setConfirmando(false)}
+                aria-label="Cancelar exclusão"
+                className="grid h-7 w-7 place-items-center rounded-full bg-texto/[.08] text-texto2 transition-colors hover:bg-texto/[.14]"
+              >
+                <IconeX tamanho={14} />
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setConfirmando(true)}
+              aria-label={`Excluir auditoria ${auditoria.codigo}`}
+              title="Excluir auditoria"
+              className="grid h-9 w-9 place-items-center rounded-full text-texto3 opacity-70
+                         transition-colors duration-200 hover:bg-vermelho/12 hover:text-vermelho hover:opacity-100"
+            >
+              <IconeLixeira tamanho={16} />
+            </button>
+          )}
+        </div>
+      )}
     </motion.li>
   );
 }

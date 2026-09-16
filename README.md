@@ -60,7 +60,8 @@ Medido no Chromium com fotos de 12 MP (4032×3024):
 | Fotos que cabem no total | ~20 |
 
 Quando o espaço acaba, a foto **não** é aceita em silêncio: o anexo é desfeito e a tela avisa para
-exportar e apagar as auditorias antigas. O mesmo vale para a importação, que não grava nada pela
+exportar e apagar as auditorias antigas (a exclusão fica no Histórico, no ícone de lixeira de cada
+linha, com confirmação). O mesmo vale para a importação, que não grava nada pela
 metade. Exportar sem as fotos é o caminho para manter o histórico com o aparelho quase cheio.
 
 > No modo local as contas ficam no `localStorage` do próprio dispositivo — a senha e a resposta de

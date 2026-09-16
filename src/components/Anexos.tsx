@@ -90,8 +90,8 @@ export default function Anexos({ anexos, aoMudar, contexto }: Props) {
       aoMudar(anexos);
       setErro(
         novos.length === 1
-          ? 'Sem espaço neste aparelho: a foto não foi guardada. Exporte as auditorias em Minha conta e apague as antigas.'
-          : 'Sem espaço neste aparelho: as fotos não foram guardadas. Exporte as auditorias em Minha conta e apague as antigas.'
+          ? 'Sem espaço neste aparelho: a foto não foi guardada. Exporte as auditorias em Minha conta e apague as antigas no Histórico.'
+          : 'Sem espaço neste aparelho: as fotos não foram guardadas. Exporte as auditorias em Minha conta e apague as antigas no Histórico.'
       );
     }
 

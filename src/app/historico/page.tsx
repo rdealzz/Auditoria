@@ -9,7 +9,7 @@ import { IconeDoc, IconeLupa, IconeMais } from '@/components/Icones';
 import { SETORES } from '@/dados/setores';
 import { NORMAS, type NormaId } from '@/dados/sgi';
 import type { Auditoria } from '@/lib/tipos';
-import { listarAuditorias } from '@/lib/armazenamento';
+import { excluirAuditoria, listarAuditorias } from '@/lib/armazenamento';
 import { useApp } from '../provedores';
 import LinhaAuditoria from '@/components/LinhaAuditoria';
 
@@ -20,7 +20,7 @@ const STATUS = [
 ];
 
 export default function Historico() {
-  const { usuario } = useApp();
+  const { usuario, avisar } = useApp();
   const [auditorias, setAuditorias] = useState<Auditoria[]>([]);
   const [f, setF] = useState({ busca: '', empresa: '', setor: '', norma: '', auditor: '', status: '', de: '', ate: '' });
   const [verFiltros, setVerFiltros] = useState(false);
@@ -131,7 +131,12 @@ export default function Historico() {
           />
         ) : (
           <ul className="space-y-2.5">
-            {filtradas.map((a, i) => <LinhaAuditoria key={a.id} auditoria={a} indice={i} />)}
+            {filtradas.map((a, i) => (
+              <LinhaAuditoria
+                key={a.id} auditoria={a} indice={i}
+                aoExcluir={() => { excluirAuditoria(a.id); avisar(`${a.codigo} excluída.`); }}
+              />
+            ))}
           </ul>
         )}
       </main>

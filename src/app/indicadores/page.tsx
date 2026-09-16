@@ -55,9 +55,25 @@ export default function Indicadores() {
       if (!a.auditor) return;
       mapa.set(a.auditor, (mapa.get(a.auditor) ?? 0) + a.naoConformidades.length);
     });
-    return [...mapa.entries()]
-      .map(([rotulo, valor]) => ({ rotulo: rotulo.split(' ')[0], valor }))
-      .filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor).slice(0, 7);
+    const escolhidos = [...mapa.entries()]
+      .filter(([, valor]) => valor > 0).sort((a, b) => b[1] - a[1]).slice(0, 7);
+
+    // Só o primeiro nome caberia no gráfico, mas duas "Ana" viram a mesma coluna:
+    // quando o primeiro nome repete, acrescenta a inicial do sobrenome.
+    const vezes = new Map<string, number>();
+    escolhidos.forEach(([nome]) => {
+      const primeiro = nome.trim().split(/\s+/)[0];
+      vezes.set(primeiro, (vezes.get(primeiro) ?? 0) + 1);
+    });
+
+    return escolhidos.map(([nome, valor]) => {
+      const partes = nome.trim().split(/\s+/);
+      const primeiro = partes[0];
+      const rotulo = (vezes.get(primeiro) ?? 0) > 1 && partes[1]
+        ? `${primeiro} ${partes[1][0].toUpperCase()}.`
+        : primeiro;
+      return { rotulo, valor };
+    });
   }, [auditorias]);
 
   const evolucao = useMemo(() => {

@@ -19,7 +19,8 @@ export function GraficoBarras({
       {/* items-stretch mantém as colunas com a altura total, para que a % da barra resolva */}
       <div className="flex items-stretch gap-2 sm:gap-3" style={{ height: altura }}>
         {dados.map((d, i) => (
-          <div key={d.rotulo} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-2">
+          // A chave usa a posição: dois rótulos iguais (dois "Ana") são legítimos.
+          <div key={`${d.rotulo}-${i}`} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-2">
             <span className="text-[12px] font-semibold tabular-nums text-texto2">{d.valor}</span>
             <motion.div
               initial={{ height: 0 }}
@@ -32,8 +33,8 @@ export function GraficoBarras({
         ))}
       </div>
       <div className="mt-2.5 flex gap-2 border-t pt-2.5 sm:gap-3">
-        {dados.map((d) => (
-          <p key={d.rotulo} className="min-w-0 flex-1 truncate text-center text-[11px] text-texto3" title={d.rotulo}>
+        {dados.map((d, i) => (
+          <p key={`${d.rotulo}-${i}`} className="min-w-0 flex-1 truncate text-center text-[11px] text-texto3" title={d.rotulo}>
             {d.rotulo}
           </p>
         ))}
@@ -62,7 +63,7 @@ export function GraficoRosca({
             acumulado += fracao;
             return (
               <motion.circle
-                key={d.rotulo}
+                key={`${d.rotulo}-${i}`}
                 cx={tamanho / 2} cy={tamanho / 2} r={r} fill="none"
                 stroke={d.cor} strokeWidth={22} strokeLinecap="butt"
                 strokeDasharray={c}
@@ -82,8 +83,8 @@ export function GraficoRosca({
         </div>
       </div>
       <ul className="space-y-2">
-        {dados.map((d) => (
-          <li key={d.rotulo} className="flex items-center gap-2.5 text-[13px]">
+        {dados.map((d, i) => (
+          <li key={`${d.rotulo}-${i}`} className="flex items-center gap-2.5 text-[13px]">
             <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: d.cor }} />
             <span className="text-texto2">{d.rotulo}</span>
             <span className="ml-auto pl-3 font-semibold tabular-nums text-texto">{d.valor}</span>
@@ -134,7 +135,7 @@ export function GraficoLinha({
         ))}
       </svg>
       <div className="mt-1.5 flex justify-between px-1 text-[11px] text-texto3">
-        {dados.map((d) => <span key={d.rotulo}>{d.rotulo}</span>)}
+        {dados.map((d, i) => <span key={`${d.rotulo}-${i}`}>{d.rotulo}</span>)}
       </div>
     </div>
   );
